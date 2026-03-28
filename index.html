@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>音演三莊公演管理系統 V3.1</title>
+<title>音演三莊公演管理系統 V3.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -142,11 +142,11 @@
     
     <div id="pane-att" style="display:none">
         <div style="background:rgba(212,175,55,0.1); padding:20px; border-radius:20px; color:var(--gold-main); font-size:20px; text-align:center; margin-bottom:20px; font-weight:bold;">
-            ⚠️ 點擊人名切換後<br>務必點擊最下方【儲存】才會扣款
+            ⚠️ 點擊人名切換後<br>務必點擊下方的【儲存】才會更新
         </div>
         <div id="att-grid" style="display:grid; grid-template-columns:repeat(2,1fr); gap:15px;"></div>
         <div style="height:40px;"></div>
-        <button class="btn-gold" style="background:var(--success); color:#fff; height:100px; font-size:32px;" onclick="submitAtt()">💾 點我儲存點名紀錄</button>
+        <button class="btn-gold" style="background:var(--success); color:#fff; height:100px; font-size:32px;" onclick="submitAtt()">💾 儲存今日點名紀錄</button>
     </div>
 
     <div id="pane-rep" style="display:none">
@@ -157,9 +157,15 @@
 
     <div id="pane-set" style="display:none">
         <div class="login-card">
-            <h3 style="color:var(--gold-main); text-align:center; font-size:28px;">帳目大歸零</h3>
-            <p style="text-align:center; color:#888; margin-bottom:30px;">名單將保留，僅清空金額與機會。</p>
-            <button class="btn-gold" onclick="resetAllAccounting()" style="background:var(--accent-red); color:#fff;">🛑 確定全部重設</button>
+            <h3 style="color:var(--gold-main); text-align:center; font-size:28px;">帳目大重設</h3>
+            <p style="text-align:center; color:#888; margin-bottom:30px;">清除金額、機會與密碼，【名單不變】。</p>
+            <button class="btn-gold" onclick="resetAllAccounting()" style="background:var(--accent-red); color:#fff; font-size:22px;">🛑 確定帳目歸零</button>
+            
+            <div style="height:50px;"></div>
+            
+            <h3 style="color:var(--success); text-align:center; font-size:28px;">緊急名單修復</h3>
+            <p style="text-align:center; color:#888; margin-bottom:20px;">萬一名單「蕭旭成」等 55 人消失，請點擊下方：</p>
+            <button class="btn-gold" onclick="forceRestoreList()" style="background:var(--success); color:#fff; font-size:22px;">🔧 點我救回 55 人名單</button>
         </div>
     </div>
     
@@ -179,13 +185,13 @@
         </div>
         <div id="modal-body"></div>
         <div style="display:grid; grid-template-columns: 1fr; gap:15px; margin-top:30px;">
-            <button class="btn-gold" style="background:var(--accent-red); color:#fff; font-size:22px;" onclick="addFineFromModal(100, '補收遲到')">補開遲到 $100</button>
-            <button class="btn-gold" style="background:#444; color:#fff; font-size:22px;" onclick="manualAddFineFromModal()">手動雜項費</button>
+            <button class="btn-gold" style="background:var(--accent-red); color:#fff; font-size:22px;" onclick="addFineFromModal(100, '手動補遲到')">補遲到 $100</button>
+            <button class="btn-gold" style="background:#444; color:#fff; font-size:22px;" onclick="manualAddFineFromModal()">雜項費輸入</button>
             <button class="btn-gold" style="background:#222; color:#fff; font-size:22px;" onclick="setPropFromModal()">道具費設定</button>
-            <button class="btn-gold" style="font-size:22px;" onclick="adminPaidFromModal()">現金收訖</button>
+            <button class="btn-gold" style="font-size:22px;" onclick="adminPaidFromModal()">收受現金</button>
         </div>
         <div style="margin-top:30px; border-top:2px solid #333; padding-top:30px;">
-            <b style="color:var(--gold-light); font-size:24px;">帳目細目紀錄：</b>
+            <b style="color:var(--gold-light); font-size:24px;">紀錄細項：</b>
             <div id="modal-history" style="font-size:20px; margin-top:15px; max-height:300px; overflow-y:auto;"></div>
         </div>
     </div>
@@ -201,12 +207,38 @@
   firebase.initializeApp(_c); const _db = firebase.database();
   let _all = {}, _user = null, _pin = "", _mPin = "0902", _attData = {}, _currentModalId = null;
 
+  // 全班固定名單陣列
+  const MUSIC_STU = ["毛語程","林叡成","田宇紘","吳昆達","吳宥良","黃崇恩","林宏澤","金品澔","劉宸昀","蔡呈樂","蘇瑞吾","梁之凡","蔡宗佑","黃穩達","馮康維","倪秉澤","廖敏君","劉慶霈","蔡慧琳","鄭淳融","魏宜宸","徐婉瑜","安兪臻","江岑君","池宛昕","李曉萍","周玄禮","王以昕","林祐立","邱詩涵","胡云珊","蔡逸宣","高慧君","張路淇","陳芃瑾","陳雨彤","陳宥安","陳圓卿","傅克諳","曾妘湘"];
+  const ACTING_STU = ["王玟茜","王語舒","姚宥湘","陳思妤","楊镕慈","王偉家","何建伸","姜榮绅","郭庭傑","陳泊源","陳軍任","黃治容","盧宥辰","謝行知"];
+  const ALL_NAMES = [...MUSIC_STU, "蕭旭成", ...ACTING_STU];
+
   _db.ref('students').on('value', s => {
       _all = s.val() || {};
+      // 如果名單完全不見（長度為0），自動執行修復
+      if(Object.keys(_all).length === 0) {
+          forceRestoreList(true);
+      }
       renderAdminList(); renderFullReport(); 
       if(_user) renderUser();
       if(_currentModalId) updateModalContent(_currentModalId);
   });
+
+  // 緊急修復名單按鈕
+  function forceRestoreList(isAuto = false) {
+      if(!isAuto && !confirm("確定要手動重建 55 位同學名單嗎？\n(這會保留現有帳目，並補齊消失的人)")) return;
+      ALL_NAMES.forEach((n, index) => {
+          // 檢查這個人是否已經在資料庫，不在才補
+          const exists = Object.values(_all).find(s => s.name === n);
+          if(!exists) {
+              _db.ref('students').push({ 
+                  no: index + 1, name: n, 
+                  totalFine: 0, propFine: 0, paidAmt: 0, 
+                  leaveQuota: 2, fundPaid: false 
+              });
+          }
+      });
+      if(!isAuto) alert("名單已成功修復！");
+  }
 
   function renderAdminList() {
     const l = document.getElementById('h-l'); if(!l) return;
@@ -221,8 +253,8 @@
             <span onclick="toggleFund('${id}', ${s.fundPaid})" class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}" style="font-size:18px; padding:12px 20px;">${s.fundPaid?'基金已繳':'欠 $1300'}</span>
         </div>
         <div class="quota-row">
-            <div class="quota-box-text ${s.leaveQuota<=1?'used':''}" onclick="adminDeduct('${id}',1)">${s.leaveQuota<=1?'✔ 已抵':'1 次折抵'}</div>
-            <div class="quota-box-text ${s.leaveQuota<=0?'used':''}" onclick="adminDeduct('${id}',0)">${s.leaveQuota<=0?'✔ 已抵':'2 次折抵'}</div>
+            <div class="quota-box-text ${s.leaveQuota<=1?'used':''}" onclick="adminDeduct('${id}',1)">${s.leaveQuota<=1?'已抵銷':'1 次折抵'}</div>
+            <div class="quota-box-text ${s.leaveQuota<=0?'used':''}" onclick="adminDeduct('${id}',0)">${s.leaveQuota<=0?'已抵銷':'2 次折抵'}</div>
         </div>
         <div style="text-align:right; margin-top:15px;"><b style="color:var(--accent-red); font-size:38px;">$${debt}</b></div>
       </div>`;
@@ -230,33 +262,39 @@
     l.innerHTML = html;
   }
 
-  // 關鍵修正：確保 render 完後不覆蓋 _attData 的已有值
+  // 帳目大歸零：【重要】修改為只歸零不移除路徑
+  function resetAllAccounting() { 
+      if(confirm("確定全部帳目重設？\n全班 55 人名單【絕對保留】，僅清空金額、密碼與機會。")) { 
+          Object.keys(_all).forEach(id => {
+              _db.ref(`students/${id}`).update({ 
+                  totalFine: 0, propFine: 0, paidAmt: 0, 
+                  leaveQuota: 2, fundPaid: false, propNote: "", 
+                  history: null, password: null 
+              });
+          });
+          alert("數據已全數歸零，名單依然存在！"); 
+      } 
+  }
+
+  // 點名邏輯（保留 3.1 同步優化）
   function renderAttGrid() {
     const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99));
     document.getElementById('att-grid').innerHTML = sorted.map(([id, s]) => {
-      // 只有當此 id 還沒被點過，才初始化它
       if (!_attData[id]) _attData[id] = { status: 'present', note: '' };
-      
       const cur = _attData[id].status;
-      const statusTextMap = { 'present': '出席', 'late': '遲到', 'leave': '請假', 'absent': '缺席' };
-      const statusClassMap = { 'present': 'status-present', 'late': 'status-late', 'leave': 'status-leave', 'absent': 'status-absent' };
-      
+      const statusMap = { 'present':['出席','status-present'], 'late':['遲到','status-late'], 'leave':['請假','status-leave'], 'absent':['缺席','status-absent'] };
       return `<div id="at-${id}" onclick="tk('${id}')" class="att-box ${cur==='late'?'active-late':''}">
-        <b style="font-size:22px;">${s.name}</b><br>
-        <span id="txt-${id}" class="att-status-text ${statusClassMap[cur]}">${statusTextMap[cur]}</span>
-        <button onclick="setNote(event,'${id}')" style="font-size:14px; background:#332b12; color:var(--gold-main); border:2px solid var(--gold-main); margin-top:15px; border-radius:12px; padding:8px 18px;">${_attData[id].note?'已註記':'寫註記'}</button>
+        <b style="font-size:24px;">${s.name}</b><br>
+        <span id="txt-${id}" class="att-status-text ${statusMap[cur][1]}">${statusMap[cur][0]}</span>
+        <button onclick="setNote(event,'${id}')" style="font-size:16px; background:#332b12; color:var(--gold-main); border:2px solid var(--gold-main); margin-top:15px; border-radius:12px; padding:8px 18px;">${_attData[id].note?'已註記':'寫註記'}</button>
       </div>`;
     }).join('');
   }
 
   window.tk = (id) => {
       const sMap = { 'present':['late','遲到','status-late'], 'late':['leave','請假','status-leave'], 'leave':['absent','缺席','status-absent'], 'absent':['present','出席','status-present'] };
-      const cur = _attData[id].status;
-      const next = sMap[cur];
-      _attData[id].status = next[0];
-      const el = document.getElementById('txt-'+id);
-      el.innerText = next[1];
-      el.className = 'att-status-text ' + next[2];
+      const cur = _attData[id].status; const next = sMap[cur]; _attData[id].status = next[0];
+      const el = document.getElementById('txt-'+id); el.innerText = next[1]; el.className = 'att-status-text ' + next[2];
       document.getElementById('at-'+id).classList.toggle('active-late', next[0] === 'late');
   }
 
@@ -265,28 +303,24 @@
       Object.entries(_attData).forEach(([id, data]) => {
           if(data.status === 'late') {
               _db.ref(`students/${id}`).update({ totalFine: (_all[id].totalFine||0) + 100 });
-              _db.ref(`students/${id}/history`).push({ type: "排練遲到罰款", amt: 100, time: t });
+              _db.ref(`students/${id}/history`).push({ type: "遲到扣款", amt: 100, time: t });
           }
-          if(data.note) {
-              _db.ref(`students/${id}/history`).push({ type: "點名註記", note: data.note, time: t });
-          }
+          if(data.note) _db.ref(`students/${id}/history`).push({ type: "老師註記", note: data.note, time: t });
       });
-      _attData = {}; // 儲存後清空暫存
-      alert("💾 點名紀錄已儲存，金額已同步更新！");
-      go('list');
+      _attData = {}; alert("💾 儲存成功，金額已更新！"); go('list');
   }
 
-  // 搜尋、密碼、分頁等基礎邏輯
+  // 其他系統功能
   function searchStudent() {
       const n = document.getElementById('stu-name').value.trim();
       const f = Object.entries(_all).find(([id, s]) => s.name === n);
       if(!f) return alert("查無姓名");
       _user = f[0]; document.getElementById('step-name').style.display = 'none';
       if(!_all[_user].password) document.getElementById('step-first-set').style.display = 'block';
-      else { document.getElementById('step-auth').style.display = 'block'; document.getElementById('auth-welcome').innerText = n + " 同學，請驗證"; }
+      else { document.getElementById('step-auth').style.display = 'block'; document.getElementById('auth-welcome').innerText = n + " 同學"; }
   }
   function setPassword() { const p = document.getElementById('first-pwd').value; if(p.length !== 4) return alert("請設4位數字"); _db.ref(`students/${_user}`).update({ password: p }); renderUser(); }
-  function authStudent() { if(_all[_user].password === document.getElementById('auth-pwd').value) renderUser(); else alert("錯誤"); }
+  function authStudent() { if(_all[_user].password === document.getElementById('auth-pwd').value) renderUser(); else alert("密碼錯誤"); }
   function renderUser() {
     const s = _all[_user]; const debt = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); const h = s.history ? Object.values(s.history).reverse() : [];
     document.getElementById('student-login').style.display = 'none';
@@ -296,19 +330,18 @@
   function openModal(id) { _currentModalId = id; document.getElementById('modal-name').innerText = `${_all[id].no}. ${_all[id].name}`; updateModalContent(id); document.getElementById('detail-modal').style.display = 'block'; }
   function updateModalContent(id) { const s = _all[id]; const debt = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); document.getElementById('modal-body').innerHTML = `<div style="text-align:center;"><div style="font-size:70px; font-weight:900; color:var(--accent-red);">$${debt}</div></div><div style="margin-top:20px; font-size:20px;">基金：${s.fundPaid?'已繳':'未繳'}<br>道具：${s.propNote||'無'}<br>機會：${s.leaveQuota||0}次</div>`; const h = s.history?Object.values(s.history).reverse():[]; document.getElementById('modal-history').innerHTML = h.map(i => `<div style="padding:10px 0; border-bottom:1px solid #333; display:flex; justify-content:space-between;"><span>${i.type}${i.note?'<br><small>'+i.note+'</small>':''}</span><span style="text-align:right;">${i.amt?'$'+i.amt:''}<br><small>${i.time}</small></span></div>`).join('')||'無紀錄'; }
   function closeModal() { document.getElementById('detail-modal').style.display='none'; _currentModalId=null; }
-  function addFineFromModal(amt, type) { addFine(_currentModalId, amt, type); }
-  function manualAddFineFromModal() { const amt = prompt("金額："); const r = prompt("原因："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ totalFine:(_all[_currentModalId].totalFine||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type: "手動雜費", note: r, amt: parseInt(amt), time: new Date().toLocaleDateString() }); } }
-  function setPropFromModal() { const amt = prompt("道具費金額："); const note = prompt("包含項目："); if(amt) _db.ref(`students/${_currentModalId}`).update({ propFine:parseInt(amt), propNote:note }); }
-  function adminPaidFromModal() { const amt = prompt("收到現金額度："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ paidAmt: (_all[_currentModalId].paidAmt||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type:"收訖現金", amt:amt, time:new Date().toLocaleDateString() }); } }
-  function addFine(id, amt, type) { _db.ref(`students/${id}`).update({ totalFine:(_all[id].totalFine||0)+amt }); _db.ref(`students/${id}/history`).push({ type:type, amt:amt, time:new Date().toLocaleDateString() }); }
-  function adminDeduct(id, target) { const s = _all[id]; const q = s.leaveQuota || 2; if (q <= target) { if(confirm("取消折抵？")) _db.ref(`students/${id}`).update({ leaveQuota: q + 1, totalFine: (s.totalFine || 0) + 100 }); } else { if(confirm("確定消耗一次機會幫 " + s.name + " 抵銷 $100？")) { _db.ref(`students/${id}`).update({ leaveQuota: q - 1, totalFine: Math.max(0, (s.totalFine || 0) - 100) }); _db.ref(`students/${id}/history`).push({ type: "機會折抵", amt: -100, time: new Date().toLocaleDateString() }); } } }
+  function addFineFromModal(amt, type) { _db.ref(`students/${_currentModalId}`).update({ totalFine:(_all[_currentModalId].totalFine||0)+amt }); _db.ref(`students/${_currentModalId}/history`).push({ type:type, amt:amt, time:new Date().toLocaleDateString() }); }
+  function manualAddFineFromModal() { const amt = prompt("金額："); const r = prompt("原因："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ totalFine:(_all[_currentModalId].totalFine||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type:"雜費", note:r, amt:parseInt(amt), time:new Date().toLocaleDateString() }); } }
+  function setPropFromModal() { const amt = prompt("道具費："); const note = prompt("說明："); if(amt) _db.ref(`students/${_currentModalId}`).update({ propFine:parseInt(amt), propNote:note }); }
+  function adminPaidFromModal() { const amt = prompt("收訖現金額："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ paidAmt:(_all[_currentModalId].paidAmt||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type:"現金收訖", amt:amt, time:new Date().toLocaleDateString() }); } }
+  function adminDeduct(id, target) { const s = _all[id]; const q = s.leaveQuota || 2; if (q <= target) { if(confirm("取消？")) _db.ref(`students/${id}`).update({ leaveQuota: q + 1, totalFine: (s.totalFine || 0) + 100 }); } else { if(confirm("確定消耗機會折抵 $100？")) { _db.ref(`students/${id}`).update({ leaveQuota: q - 1, totalFine: Math.max(0, (s.totalFine || 0) - 100) }); _db.ref(`students/${id}/history`).push({ type: "機會折抵", amt: -100, time: new Date().toLocaleDateString() }); } } }
   function toggleFund(id, cur) { _db.ref(`students/${id}`).update({ fundPaid: !cur }); }
   function go(p, el) { ['list','att','rep','set'].forEach(i => document.getElementById('pane-'+i).style.display = 'none'); document.getElementById('pane-'+p).style.display = 'block'; document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); if(el) el.classList.add('active'); if(p === 'att') renderAttGrid(); }
   function showLock() { document.getElementById('lock-overlay').style.display='flex'; _pin=""; }
   function press(v) { if(v==='del') _pin=_pin.slice(0,-1); else if(_pin.length<4) _pin+=v; const ds=document.getElementById('pwd-dots').children; for(let i=0; i<4; i++) ds[i].style.background=i<_pin.length?'var(--gold-main)':'none'; if(_pin.length===4) { if(_pin===_mPin) { document.getElementById('lock-overlay').style.display='none'; document.getElementById('view-student').style.display='none'; document.getElementById('view-admin').style.display='block'; go('list'); } else { alert("錯誤"); _pin=""; } } }
-  function resetAllAccounting() { if(confirm("確定帳目大歸零？（名單會保留）")) { Object.keys(_all).forEach(id => _db.ref(`students/${id}`).update({ totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false, propNote:"", history:null, password:null })); alert("數據已清空！"); } }
-  function doExcel() { const d = [["座號", "姓名", "基金", "機會", "欠費"]]; Object.values(_all).forEach(s => d.push([s.no, s.name, s.fundPaid?'已繳':'未繳', s.leaveQuota, (s.totalFine||0)+(s.propFine||0)+(s.fundPaid?0:1300)-(s.paidAmt||0)])); const ws = XLSX.utils.aoa_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "報表"); XLSX.writeFile(wb, "音演三莊帳目報表.xlsx"); }
+  function doExcel() { const d = [["座號", "姓名", "基金", "機會", "欠費"]]; Object.values(_all).forEach(s => d.push([s.no, s.name, s.fundPaid?'已繳':'未繳', s.leaveQuota, (s.totalFine||0)+(s.propFine||0)+(s.fundPaid?0:1300)-(s.paidAmt||0)])); const ws = XLSX.utils.aoa_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "報表"); XLSX.writeFile(wb, "音演三莊公演帳目報表.xlsx"); }
   function setNote(e, id) { e.stopPropagation(); const n = prompt("輸入註記內容：", _attData[id].note); if(n!==null) { _attData[id].note = n; renderAttGrid(); } }
+  function renderFullReport() { const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99)); let total = 0; let html = ""; sorted.forEach(([id, s]) => { if(s.no === 42) html += `<div class="list-divider">演三莊同學名單</div>`; const d = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); total += d; html += `<div style="display:flex; justify-content:space-between; padding:15px 0; border-bottom:1px solid #222;"><span>${s.no}. ${s.name} ${s.fundPaid?'':'(未繳金)'}</span><span style="color:${d>0?'var(--accent-red)':'#666'}">$${d}</span></div>`; }); document.getElementById('full-report-list').innerHTML = html; document.getElementById('total-sum-badge').innerText = '$' + total; }
 </script>
 </body>
 </html>
