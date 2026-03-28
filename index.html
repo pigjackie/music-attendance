@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>畢業公演出席系統 PRO (安全版)</title>
+<title>畢業公演出席系統 PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 
 <script type="module">
@@ -40,6 +40,9 @@
   let attendTemp = {};
   let currentStudentId = null;
 
+  // 安全管理密碼設定 (僅在此處修改)
+  const MASTER_KEY = "0902"; 
+
   window.show = (id) => { const el = document.getElementById(id); if(el) el.style.display='block'; };
   window.hide = (id) => { const el = document.getElementById(id); if(el) el.style.display='none'; };
   window.showToast = (msg) => { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
@@ -65,24 +68,20 @@
     });
   }
 
-  // --- 學生登入邏輯 ---
   window.goStudent = () => { hide('lock-screen'); show('student-screen'); hide('student-login-area'); hide('student-data-area'); show('student-search-bar'); };
   
   window.searchName = function() {
     const name = document.getElementById('student-name-input').value.trim();
     const found = Object.entries(students).find(([,s]) => s.name === name);
-    if (!found) { showToast("查無此人，請檢查姓名"); return; }
-    
+    if (!found) { showToast("查無此人"); return; }
     currentStudentId = found[0];
     const s = found[1];
     hide('student-search-bar');
     show('student-login-area');
-    
     const promptText = document.getElementById('login-prompt');
     const loginBtn = document.getElementById('login-action-btn');
-    
     if (!s.password || s.password === "") {
-      promptText.innerHTML = `<b style="color:var(--green)">首次登入</b><br>請設定您的 4 位數查詢密碼：`;
+      promptText.innerHTML = `<span style="color:var(--green)">首次查詢</span><br>請設定您的 4 位數密碼：`;
       loginBtn.textContent = "設定並進入";
     } else {
       promptText.innerHTML = `歡迎回來，<b>${s.name}</b><br>請輸入查詢密碼：`;
@@ -92,21 +91,15 @@
 
   window.handleStudentLogin = async function() {
     const pwdInput = document.getElementById('student-pwd-input').value.trim();
-    if (pwdInput.length < 4) { showToast("請輸入至少 4 位數密碼"); return; }
-    
+    if (pwdInput.length < 4) { showToast("密碼太短"); return; }
     const s = students[currentStudentId];
     if (!s.password || s.password === "") {
-      // 設定新密碼
       await update(ref(db, `students/${currentStudentId}`), { password: pwdInput });
-      showToast("密碼設定成功！");
+      renderStudentData(currentStudentId);
+    } else if (s.password === pwdInput) {
       renderStudentData(currentStudentId);
     } else {
-      // 驗證舊密碼
-      if (s.password === pwdInput) {
-        renderStudentData(currentStudentId);
-      } else {
-        showToast("密碼錯誤！");
-      }
+      showToast("密碼錯誤");
     }
     document.getElementById('student-pwd-input').value = "";
   };
@@ -117,32 +110,28 @@
     show('student-data-area');
     const owed = Math.max(0, s.lateCount - s.paidCount) * FEE;
     const hist = [...s.history].reverse();
-    
     document.getElementById('student-data-area').innerHTML = `
       <div class="student-card main-card">
         <div class="card-top"><div><div class="student-name">${s.name}</div><div class="student-num">${id}</div></div>
-        ${owed === 0 ? '<div class="model-badge">準時模範生 ✅</div>' : `<div class="fee-badge owed">待繳 $${owed}</div>`}</div>
+        <div class="${owed===0?'model-badge':'fee-badge'}">${owed===0?'模範生 ✅':'待繳 $'+owed}</div></div>
         <div class="card-pills"><div class="pill">遲到 <span>${s.lateCount}</span></div><div class="pill">出席 <span>${s.presentCount}</span></div><div class="pill">請假 <span>${s.leaveCount||0}</span></div></div>
       </div>
-      <div class="section-label">詳細明細 (日期/事由)</div>
-      ${hist.map(h=>`<div class="history-item"><span>${h.type==='late'?'⏰ 遲到 $'+FEE : h.type==='paid'?'💰 繳費 $'+FEE : h.type==='leave'?'🍃 請假' : h.type==='absent'?'❌ 缺席' : '✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}
-    `;
+      <div class="section-label">日期與事由紀錄</div>
+      ${hist.map(h=>`<div class="history-item"><span>${h.type==='late'?'⏰ 遲到 $'+FEE : h.type==='paid'?'💰 已繳 $'+FEE : h.type==='leave'?'🍃 請假' : h.type==='absent'?'❌ 缺席' : '✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}`;
   }
 
-  // --- 管理員密碼 ---
   let pinBuffer = '';
   window.pinInput = (n) => { if(pinBuffer.length<4) pinBuffer+=n; updateDots(); if(pinBuffer.length===4) setTimeout(checkPin,200); };
   window.pinDel = () => { pinBuffer=pinBuffer.slice(0,-1); updateDots(); };
   function updateDots() { for(let i=0;i<4;i++) document.getElementById('d'+i).className='pin-dot'+(i<pinBuffer.length?' filled':''); }
   function checkPin() {
-    if(pinBuffer === '0902') {
+    if(pinBuffer === MASTER_KEY) {
       isAdmin = true; hide('lock-screen'); show('admin-app'); showTab('list'); pinBuffer = ''; updateDots();
     } else {
-      showToast('密碼錯誤'); pinBuffer = ''; updateDots();
+      showToast('驗證失敗'); pinBuffer = ''; updateDots();
     }
   }
 
-  // --- 其餘管理邏輯保持不變 ---
   window.showTab = (name) => {
     ['list','attend', 'report', 'settings'].forEach(t => hide('apage-'+t));
     show('apage-'+name);
@@ -167,8 +156,8 @@
 
   window.quickAction = async function(id, type) {
     const s = students[id]; const time = new Date().toLocaleDateString('zh-TW');
-    if(type==='paid' && s.paidCount < s.lateCount) { await update(ref(db,`students/${id}`), {paidCount: s.paidCount+1}); await push(ref(db, `students/${id}/history`), {type:'paid', time}); showToast("收款成功"); }
-    else if(type==='late') { await update(ref(db,`students/${id}`), {lateCount: s.lateCount+1}); await push(ref(db, `students/${id}/history`), {type:'late', time}); showToast("遲到+1"); }
+    if(type==='paid' && s.paidCount < s.lateCount) { await update(ref(db,`students/${id}`), {paidCount: s.paidCount+1}); await push(ref(db, `students/${id}/history`), {type:'paid', time}); showToast("入帳完成"); }
+    else if(type==='late') { await update(ref(db,`students/${id}`), {lateCount: s.lateCount+1}); await push(ref(db, `students/${id}/history`), {type:'late', time}); showToast("已計罰款"); }
   };
 
   function resetAttendTemp() { attendTemp = {}; Object.keys(students).forEach(id => { attendTemp[id] = 'present'; }); }
@@ -183,7 +172,7 @@
   window.cycleAttend = (id) => { const states=['present','late','absent','leave']; attendTemp[id] = states[(states.indexOf(attendTemp[id]||'present')+1)%states.length]; renderAttendGrid(); };
   window.saveAttendance = async function() {
     const time = new Date().toLocaleDateString('zh-TW');
-    if(!confirm("確定儲存？預設未更動者皆為出席。")) return;
+    if(!confirm("確定儲存點名？")) return;
     for (const [id, status] of Object.entries(attendTemp)) {
       const s = students[id]; const up = {};
       if(status==='present') up.presentCount = (s.presentCount||0)+1;
@@ -192,23 +181,23 @@
       if(status==='leave') up.leaveCount = (s.leaveCount||0)+1;
       await update(ref(db,`students/${id}`), up); await push(ref(db, `students/${id}/history`), {type: status, time});
     }
-    showToast("點名完成"); showTab('list');
+    showToast("同步雲端成功"); showTab('list');
   };
   window.renderReport = () => { 
     const rTotal = document.getElementById('r-total');
-    if(rTotal) { rTotal.textContent = '$' + Object.values(students).reduce((a,s)=> a + Math.max(0, s.lateCount - s.paidCount)*FEE, 0); }
+    if(rTotal) rTotal.textContent = '$' + Object.values(students).reduce((a,s)=> a + Math.max(0, s.lateCount - s.paidCount)*FEE, 0);
     document.getElementById('report-detail').innerHTML = Object.values(students).filter(s => s.lateCount > 0).map(s => `
-      <div class="history-item"><span>${s.name} (累計: $${s.lateCount*FEE})</span><span style="color:var(--accent)">欠 $${Math.max(0, s.lateCount - s.paidCount)*FEE}</span></div>
-    `).join('') || '<div style="text-align:center;color:var(--muted)">目前無人受罰</div>';
+      <div class="history-item"><span>${s.name} (累計罰款: $${s.lateCount*FEE})</span><span style="color:var(--accent)">欠 $${Math.max(0, s.lateCount - s.paidCount)*FEE}</span></div>
+    `).join('') || '<div style="text-align:center;color:var(--muted)">目前無欠費紀錄</div>';
   };
   window.resetAllData = async function() {
-    const pwd = prompt("⚠️ 將清空所有紀錄！輸入管理密碼確認：");
-    if(pwd === '0902') { await remove(ref(db, 'students')); initStudents(); showToast("已重設"); }
+    const pwd = prompt("🛑 安全驗證：請輸入管理密碼以重設全系統：");
+    if(pwd === MASTER_KEY) { if(confirm("確定清除所有數據？")) { await remove(ref(db, 'students')); initStudents(); showToast("全系統重設完畢"); } }
   };
   window.copyOwedList = function() {
-    let text = "【畢業公演罰款通知】\n";
+    let text = "【排練罰款催繳通知】\n";
     Object.values(students).forEach(s => { const owed = Math.max(0, s.lateCount - s.paidCount)*FEE; if (owed > 0) text += `📌 ${s.name}：$${owed}\n`; });
-    navigator.clipboard.writeText(text).then(() => showToast("已複製"));
+    navigator.clipboard.writeText(text).then(() => showToast("已複製名單"));
   };
   window.goLock = () => { isAdmin=false; hide('student-screen'); hide('admin-app'); show('lock-screen'); pinBuffer=''; updateDots(); };
 
@@ -256,7 +245,7 @@ input{background:var(--surface);border:1px solid var(--border);color:#fff;paddin
 </style>
 </head>
 <body>
-<div id="lock-screen"><div style="font-size:60px;margin-bottom:10px">🎭</div><h2>畢業公演系統</h2><p style="color:var(--muted);font-size:13px">管理員請輸入 0902</p>
+<div id="lock-screen"><div style="font-size:60px;margin-bottom:10px">🎭</div><h2>畢業公演出席系統</h2><p style="color:var(--muted);font-size:13px">請輸入管理密碼</p>
 <div class="pin-dots"><div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div><div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div></div>
 <div class="numpad">
 <button class="num-btn" onclick="pinInput(1)">1</button><button class="num-btn" onclick="pinInput(2)">2</button><button class="num-btn" onclick="pinInput(3)">3</button>
@@ -274,24 +263,21 @@ input{background:var(--surface);border:1px solid var(--border);color:#fff;paddin
       <button onclick="searchName()" style="background:var(--accent);border:none;padding:0 25px;border-radius:12px;color:#fff;font-weight:bold">下一步</button>
     </div>
   </div>
-
   <div id="student-login-area" style="display:none;margin-top:20px;text-align:center">
     <p id="login-prompt" style="margin-bottom:15px;line-height:1.6"></p>
     <input type="password" id="student-pwd-input" placeholder="請輸入 4 位數密碼" pattern="[0-9]*" inputmode="numeric" style="text-align:center;letter-spacing:10px">
     <button onclick="handleStudentLogin()" id="login-action-btn" class="btn-primary">驗證進入</button>
     <button onclick="goStudent()" style="margin-top:20px;color:var(--muted);background:none;border:none;display:block;width:100%">← 返回搜尋</button>
   </div>
-
   <div id="student-data-area" style="display:none;margin-top:20px"></div>
-  
   <button onclick="goLock()" style="margin-top:50px;color:var(--muted);background:none;border:none;width:100%">← 返回首頁</button>
 </div>
 
 <div id="admin-app" style="display:none">
 <div class="safe-area" id="apage-list"><h2>名冊管理</h2><div id="admin-list" style="margin-top:20px"></div></div>
-<div class="safe-area" id="apage-attend" style="display:none"><h2>快速點名</h2><div class="att-grid" id="att-grid"></div><button class="btn-primary" onclick="saveAttendance()">💾 儲存今日紀錄</button></div>
-<div class="safe-area" id="apage-report" style="display:none"><h2>罰款報表</h2><div id="r-total" style="font-size:32px;font-weight:bold;color:var(--accent);margin:15px 0">$0</div><button class="btn-primary" onclick="copyOwedList()" style="background:var(--blue)">📋 複製催繳名單</button><div id="report-detail"></div></div>
-<div class="safe-area" id="apage-settings" style="display:none"><h2>系統設定</h2><button onclick="resetAllData()" style="background:var(--red);color:#fff;border:none;padding:12px;border-radius:10px;width:100%;font-weight:bold;margin-top:20px">🛑 清空所有數據</button><button onclick="goLock()" class="btn-primary" style="background:var(--surface);border:1px solid var(--border);margin-top:20px">🔒 登出</button></div>
+<div class="safe-area" id="apage-attend" style="display:none"><h2>快速點名</h2><p style="color:var(--muted);font-size:13px;margin:15px 0">預設出席。點擊：⏰(遲)→❌(缺)→🍃(假)</p><div class="att-grid" id="att-grid"></div><button class="btn-primary" onclick="saveAttendance()">💾 儲存今日紀錄</button></div>
+<div class="safe-area" id="apage-report" style="display:none"><h2>罰款報表</h2><div id="r-total" style="font-size:32px;font-weight:bold;color:var(--accent);margin:15px 0">$0</div><button class="btn-primary" onclick="copyOwedList()" style="background:var(--blue)">📋 複製催繳名單</button><div id="report-detail" style="margin-top:20px"></div></div>
+<div class="safe-area" id="apage-settings" style="display:none"><h2>系統設定</h2><button onclick="resetAllData()" style="background:var(--red);color:#fff;border:none;padding:12px;border-radius:10px;width:100%;font-weight:bold;margin-top:20px">🛑 清空所有數據</button><button onclick="goLock()" class="btn-primary" style="background:var(--surface);border:1px solid var(--border);margin-top:20px">🔒 登出系統</button></div>
 <nav class="bottom-nav"><div id="nav-list" class="nav-item" onclick="showTab('list')"><span class="icon">👥</span>名單</div><div id="nav-attend" class="nav-item" onclick="showTab('attend')"><span class="icon">📅</span>點名</div><div id="nav-report" class="nav-item" onclick="showTab('report')"><span class="icon">📊</span>報表</div><div id="nav-settings" class="nav-item" onclick="showTab('settings')"><span class="icon">⚙️</span>設定</div></nav>
 </div>
 <div class="toast" id="toast"></div>
