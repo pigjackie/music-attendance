@@ -12,15 +12,15 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set, get, update, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  // ⚠️ 請在此處貼回您原本的 Firebase 設定 ⚠️
+  // ✅ 已幫您填入 jjvsmusic 的正確設定
   const firebaseConfig = {
     apiKey:            "AIzaSyC_6aza1KH8GXxUbYBraK7wcqPrSUSF-Ns",
-    authDomain:        "YOUR_PROJECT.firebaseapp.com",
-    databaseURL:       "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-    projectId:         "YOUR_PROJECT",
-    storageBucket:     "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId:             "YOUR_APP_ID"
+    authDomain:        "jjvsmusic.firebaseapp.com",
+    databaseURL:       "https://jjvsmusic-default-rtdb.firebaseio.com",
+    projectId:         "jjvsmusic",
+    storageBucket:     "jjvsmusic.appspot.com",
+    messagingSenderId: "754846318347",
+    appId:             "1:754846318347:web:865668e27c1529688432a5"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -60,11 +60,9 @@
     });
   }
 
-  // ── UI 控制 ──
   window.goStudent = () => { hide('lock-screen'); show('student-screen'); };
   window.goLock = () => { hide('student-screen'); show('lock-screen'); };
   
-  // ── 學生查詢 PRO ──
   window.studentLookup = function() {
     const query = document.getElementById('student-name-input').value.trim();
     if (!query) return;
@@ -88,11 +86,10 @@
         </div>
       </div>
       <div class="section-label">最近記錄</div>
-      ${hist.slice(0,10).map(h=>`<div class="history-item"><span>${h.type==='late'?'⏰ 遲到':h.type==='paid'?'💰 繳費':h.type==='leave'?'🍃 請假':'✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}
+      ${hist.slice(0,10).map(h=>`<div class="history-item"><span>${h.type==='late'?'⏰ 遲到':h.type==='paid'?'💰 繳費':h.type==='leave'?'🍃 請假':h.type==='absent'?'❌ 缺席':'✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}
     `;
   };
 
-  // ── 管理員功能 PRO ──
   window.copyOwedList = function() {
     let text = "【畢業公演罰款催繳單】\n";
     let count = 0;
@@ -104,29 +101,20 @@
       }
     });
     if (count === 0) text = "太棒了！目前全員繳清！✨";
-    navigator.clipboard.writeText(text).then(() => showToast("已複製催繳名單，可直接貼到 Line"));
+    navigator.clipboard.writeText(text).then(() => showToast("已複製催繳名單"));
   };
 
-  // ── 點名系統升級 ──
-  window.cycleAttend = function(id) {
-    const states=['','present','late','absent','leave'];
-    attendTemp[id] = states[(states.indexOf(attendTemp[id]||'')+1)%states.length];
-    window.renderAttendGrid();
-  };
-
-  // ── 其餘核心邏輯 (與原版相容) ──
   let pinBuffer = '';
   window.pinInput = (n) => { if(pinBuffer.length<4) pinBuffer+=n; updateDots(); if(pinBuffer.length===4) setTimeout(checkPin,200); };
   window.pinDel = () => { pinBuffer=pinBuffer.slice(0,-1); updateDots(); };
   function updateDots() { for(let i=0;i<4;i++) document.getElementById('d'+i).className='pin-dot'+(i<pinBuffer.length?' filled':''); }
   function checkPin() {
     const stored = localStorage.getItem('gp_pin') || '1234';
-    if(pinBuffer===stored) { isAdmin=true; show('admin-app'); hide('lock-screen'); }
+    if(pinBuffer===stored) { isAdmin=true; show('admin-app'); hide('lock-screen'); showTab('list'); }
     else { showToast('密碼錯誤'); pinBuffer=''; updateDots(); }
   }
   window.lockApp = () => { isAdmin=false; show('lock-screen'); hide('admin-app'); pinBuffer=''; updateDots(); };
 
-  // 初始化
   initStudents();
 </script>
 
@@ -134,17 +122,13 @@
 :root{--bg:#0a0a0c;--surface:#161618;--accent:#ff6b35;--green:#30d158;--red:#ff453a;--blue:#0a84ff;--text:#ffffff;--muted:#8e8e93;--border:#2c2c2e}
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Noto Sans TC',sans-serif}
 body{background:var(--bg);color:var(--text);overflow-x:hidden}
-.safe-area{padding:20px 16px;max-width:500px;margin:0 auto}
-
-/* 鎖定畫面 */
+.safe-area{padding:20px 16px;max-width:500px;margin:0 auto;padding-bottom:100px}
 #lock-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000}
 .pin-dots{display:flex;gap:20px;margin:30px 0}
 .pin-dot{width:15px;height:15px;border-radius:50%;border:2px solid var(--border)}
 .pin-dot.filled{background:var(--accent);border-color:var(--accent)}
 .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
 .num-btn{width:70px;height:70px;border-radius:50%;background:var(--surface);border:none;color:var(--text);font-size:24px;font-weight:bold}
-
-/* 卡片設計 */
 .student-card{background:var(--surface);border-radius:18px;padding:20px;margin-bottom:15px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
 .main-card{border-left:5px solid var(--accent)}
 .card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:15px}
@@ -155,16 +139,59 @@ body{background:var(--bg);color:var(--text);overflow-x:hidden}
 .card-pills{display:flex;gap:10px}
 .pill{background:rgba(255,255,255,0.05);padding:5px 12px;border-radius:8px;font-size:12px;color:var(--muted)}
 .pill span{color:var(--text);font-weight:bold}
-
-/* 點名網格 */
 .att-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .att-cell{background:var(--surface);padding:10px 5px;border-radius:12px;text-align:center;border:1px solid var(--border);font-size:12px}
 .att-cell.present-bg{border-color:var(--green);background:rgba(48,209,88,0.1)}
 .att-cell.late-bg{border-color:var(--accent);background:rgba(255,107,53,0.1)}
 .att-cell.absent-bg{border-color:var(--red);background:rgba(255,69,58,0.1)}
 .att-cell.leave-bg{border-color:var(--blue);background:rgba(10,132,255,0.1)}
-
-/* 按鈕與導覽 */
 .btn-primary{background:var(--accent);color:#fff;border:none;padding:14px;border-radius:14px;width:100%;font-weight:bold;font-size:16px;margin-top:10px}
-.btn-copy{background:var(--blue);margin-top:20px}
-.bottom-nav{position:fixed;bottom:0;left:0
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);display:flex;padding:10px 0 25px;border-top:1px solid var(--border);z-index:900}
+.nav-item{flex:1;text-align:center;font-size:10px;color:var(--muted)}
+.nav-item.active{color:var(--accent)}
+.icon{font-size:24px;display:block}
+.section-label{font-size:11px;color:var(--muted);letter-spacing:2px;margin:20px 0 10px;text-transform:uppercase}
+.history-item{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px}
+.history-item .time{color:var(--muted);font-size:12px}
+.toast{position:fixed;top:50px;left:50%;transform:translateX(-50%);background:var(--accent);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:bold;opacity:0;transition:0.3s;z-index:2000;pointer-events:none}
+.toast.show{opacity:1}
+input{background:var(--surface);border:1px solid var(--border);color:#fff;padding:12px;border-radius:10px;width:100%;outline:none}
+</style>
+</head>
+<body>
+
+<div id="lock-screen">
+  <div style="font-size:50px">🎭</div>
+  <h2 style="margin:10px 0">畢業公演出席系統</h2>
+  <div class="pin-dots"><div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div><div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div></div>
+  <div class="numpad">
+    <button class="num-btn" onclick="pinInput(1)">1</button><button class="num-btn" onclick="pinInput(2)">2</button><button class="num-btn" onclick="pinInput(3)">3</button>
+    <button class="num-btn" onclick="pinInput(4)">4</button><button class="num-btn" onclick="pinInput(5)">5</button><button class="num-btn" onclick="pinInput(6)">6</button>
+    <button class="num-btn" onclick="pinInput(7)">7</button><button class="num-btn" onclick="pinInput(8)">8</button><button class="num-btn" onclick="pinInput(9)">9</button>
+    <button class="num-btn" style="background:transparent"></button><button class="num-btn" onclick="pinInput(0)">0</button><button class="num-btn" onclick="pinDel()">⌫</button>
+  </div>
+  <button onclick="goStudent()" style="margin-top:30px;color:var(--blue);background:none;border:none;font-weight:bold">我是學生，查詢個人紀錄 →</button>
+</div>
+
+<div id="student-screen" class="safe-area" style="display:none">
+  <h1>出席查詢</h1>
+  <div style="display:flex;gap:10px;margin:20px 0">
+    <input type="text" id="student-name-input" placeholder="請輸入姓名">
+    <button onclick="studentLookup()" style="background:var(--accent);border:none;padding:0 20px;border-radius:10px;color:#fff;font-weight:bold">查詢</button>
+  </div>
+  <div id="student-result"></div>
+  <button onclick="goLock()" style="margin-top:40px;color:var(--muted);background:none;border:none;width:100%">← 返回管理登入</button>
+</div>
+
+<div id="admin-app" style="display:none">
+  <div class="safe-area" id="apage-list">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2>學生名冊</h2>
+      <button onclick="lockApp()" style="background:none;border:none;font-size:20px">🔒</button>
+    </div>
+    <div id="admin-list"></div>
+  </div>
+
+  <div class="safe-area" id="apage-attend" style="display:none">
+    <h2>即時點名</h2>
+    <p style="color:var(--muted);font-size:12px;margin:10px 0">點擊切換：○→✅(出)→⏰(遲)→❌(缺)→
