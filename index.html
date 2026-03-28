@@ -11,33 +11,99 @@
 
 <style>
   :root {
-    --bg-black: #050505;
-    --gold-bright: #fbeea7;
-    --gold-matte: #d4af37;
-    --accent-red: #ff3b30;
-    --glass: rgba(255, 255, 255, 0.06);
+    --gold-deep: #8a6d1a;
+    --gold-main: #d4af37;
+    --gold-light: #fbeea7;
+    --gold-soft: rgba(251, 238, 167, 0.2);
+    --accent-red: #d32f2f; /* 稍深一點的紅，避免在金黃色背景下太刺眼 */
+    --text-dark: #3a2e11;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg-black); color: #fff; font-family: 'Noto Sans TC', sans-serif; overflow-x: hidden; }
-  body { background: radial-gradient(circle at top right, #3a2e11 0%, #050505 100%); background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 20 L20 20 L20 10 M80 80 L80 90 L90 90 M30 70 Q 35 75, 40 70 T 50 70 Q 55 75, 60 70 M15 50 A 5 5 0 1 1 25 50 A 5 5 0 1 1 15 50 M75 30 Q 80 35, 85 30 T 95 30' stroke='%23d4af37' stroke-width='0.5' fill='none' opacity='0.08'/%3E%3Ctext x='5' y='95' font-family='serif' font-size='30' fill='%23d4af37' opacity='0.06'%3E𝄞%3C/text%3E%3Ctext x='70' y='25' font-family='serif' font-size='20' fill='%23d4af37' opacity='0.05'%3E𝄢%3C/text%3E%3C/svg%3E"); background-attachment: fixed; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--gold-main); font-family: 'Noto Sans TC', sans-serif; overflow-x: hidden; }
+
+  /* 1. 滿版金黃色系背景 + 樂器浮水印 */
+  body {
+    background: radial-gradient(circle at center, #fff9d6 0%, #fbeea7 40%, #d4af37 100%);
+    /* 背景加入更多音符與高音譜號 SVG */
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='30' font-family='serif' font-size='25' fill='%238a6d1a' opacity='0.08'%3E𝄞%3C/text%3E%3Ctext x='60' y='80' font-family='serif' font-size='20' fill='%238a6d1a' opacity='0.1'%3E♫%3C/text%3E%3Ctext x='80' y='40' font-family='serif' font-size='18' fill='%238a6d1a' opacity='0.06'%3E♪%3C/text%3E%3Ccircle cx='20' cy='70' r='1' fill='%238a6d1a' opacity='0.2'/%3E%3Cpath d='M40 20 Q 45 25, 50 20' stroke='%238a6d1a' stroke-width='0.5' fill='none' opacity='0.1'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+  }
+
   .app-container { flex: 1; width: 100%; padding: 20px; display: flex; flex-direction: column; }
+  
+  /* 標題區美化 */
   .header { text-align: center; margin: 30px 0; }
-  .main-title { font-size: 24px; font-weight: 900; color: var(--gold-bright); letter-spacing: 1px; text-shadow: 0 0 10px rgba(212,175,55,0.4); }
-  .sub-title { font-size: 13px; color: var(--gold-matte); letter-spacing: 4px; opacity: 0.8; margin-top: 5px; font-weight: bold; }
-  .main-card { background: var(--glass); border-radius: 24px; padding: 30px 20px; border: 1px solid rgba(212, 175, 55, 0.15); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 20px 50px rgba(0,0,0,0.5); width: 100%; }
-  input { width: 100%; padding: 18px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 18px; margin-bottom: 20px; transition: 0.3s; }
-  .btn-primary { width: 100%; padding: 18px; border-radius: 16px; background: linear-gradient(135deg, var(--gold-bright), var(--gold-matte)); color: #000; font-weight: 900; font-size: 18px; border: none; box-shadow: 0 8px 25px rgba(212, 175, 55, 0.2); transition: 0.2s; cursor: pointer; }
-  .badge-note { font-family: serif; font-size: 18px; color: var(--accent-red); margin-left: 8px; animation: notePulse 1.5s infinite; }
-  @keyframes notePulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
-  .admin-btn { margin: auto 0 20px 0; text-align: center; color: rgba(255,255,255,0.15); font-size: 12px; letter-spacing: 2px; cursor: pointer; }
-  .list-item { background: rgba(255,255,255,0.04); padding: 18px; border-radius: 18px; margin-bottom: 12px; border-left: 4px solid var(--gold-matte); }
-  .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10,10,10,0.95); border-top: 1px solid #222; display: flex; padding: 15px 0 env(safe-area-inset-bottom); backdrop-filter: blur(10px); z-index: 100; }
-  .nav-item { flex: 1; text-align: center; font-size: 12px; color: #555; cursor: pointer; }
-  .nav-item.active { color: var(--gold-matte); font-weight: bold; }
-  #lock-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(15px); }
-  .btn-n { width: 75px; height: 75px; border-radius: 50%; background: rgba(28,28,30,0.8); color: #fff; border: 1px solid rgba(212,175,55,0.1); font-size: 26px; font-family: 'serif'; }
-  .leader-badge { background: var(--gold-matte); color: #000; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle; }
+  .main-title { font-size: 26px; font-weight: 900; color: var(--gold-deep); letter-spacing: 1px; text-shadow: 2px 2px 4px rgba(255,255,255,0.5); }
+  .sub-title { font-size: 14px; color: var(--gold-deep); letter-spacing: 5px; opacity: 0.8; margin-top: 5px; font-weight: bold; }
+
+  /* 滿版磨砂金質感卡片 */
+  .main-card {
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 28px;
+    padding: 30px 20px;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    box-shadow: 0 15px 35px rgba(138, 109, 26, 0.2);
+    width: 100%;
+    color: var(--text-dark);
+  }
+
+  input {
+    width: 100%; padding: 18px; border-radius: 16px;
+    border: 1px solid var(--gold-main);
+    background: rgba(255, 255, 255, 0.6); color: var(--text-dark);
+    font-size: 18px; margin-bottom: 20px; transition: 0.3s;
+  }
+  input::placeholder { color: var(--gold-deep); opacity: 0.6; }
+
+  .btn-primary {
+    width: 100%; padding: 18px; border-radius: 16px;
+    background: linear-gradient(135deg, var(--gold-deep), #5c4810);
+    color: #fff; font-weight: 900; font-size: 18px; border: none;
+    box-shadow: 0 8px 20px rgba(92, 72, 16, 0.3); transition: 0.2s;
+  }
+  .btn-primary:active { transform: scale(0.97); }
+
+  /* 音符紅點 */
+  .badge-note { font-family: serif; font-size: 20px; color: var(--accent-red); margin-left: 8px; animation: notePulse 1.5s infinite; }
+  @keyframes notePulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+  .admin-btn { margin: auto 0 20px 0; text-align: center; color: var(--gold-deep); font-size: 12px; font-weight: bold; opacity: 0.5; }
+
+  /* 後台列表美化 */
+  .list-item {
+    background: rgba(255, 255, 255, 0.5); padding: 20px; border-radius: 20px;
+    margin-bottom: 12px; border: 1px solid rgba(138, 109, 26, 0.1);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  }
+
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; width: 100%;
+    background: rgba(251, 238, 167, 0.95); border-top: 1px solid rgba(138, 109, 26, 0.2);
+    display: flex; padding: 15px 0 env(safe-area-inset-bottom);
+    backdrop-filter: blur(10px); z-index: 100;
+  }
+  .nav-item { flex: 1; text-align: center; font-size: 12px; color: var(--gold-deep); opacity: 0.5; }
+  .nav-item.active { opacity: 1; font-weight: bold; }
+
+  /* 鎖屏介面 (改為金黃色透明感) */
+  #lock-overlay {
+    position: fixed; inset: 0; background: rgba(251, 238, 167, 0.98); z-index: 3000;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .btn-n {
+      width: 75px; height: 75px; border-radius: 50%;
+      background: #fff; color: var(--gold-deep);
+      border: 2px solid var(--gold-main); font-size: 26px; font-family: serif;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  }
+  .btn-n:active { background: var(--gold-light); }
+  
+  .leader-badge { background: var(--gold-deep); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 6px; margin-left: 8px; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -45,57 +111,58 @@
   <div class="app-container" id="view-student">
     <div class="header">
       <div class="main-title">112年莊敬高職音樂畢業公演</div>
-      <div class="sub-title">STUDENT PORTAL</div>
+      <div class="sub-title">MUSIC GRADUATION</div>
     </div>
 
     <div id="student-login" class="main-card">
         <div id="login-step1">
             <input type="text" id="stu-name" placeholder="請輸入姓名">
-            <button class="btn-primary" onclick="searchStudent()">查詢出席狀態</button>
+            <button class="btn-primary" onclick="searchStudent()">進入查詢系統</button>
         </div>
         <div id="login-step2" style="display:none">
-            <p id="stu-welcome" style="text-align:center; color:var(--gold-bright); margin-bottom:15px; font-weight:bold;"></p>
+            <p id="stu-welcome" style="text-align:center; color:var(--gold-deep); margin-bottom:15px; font-weight:bold;"></p>
             <input type="password" id="stu-pwd" placeholder="輸入 4 位密碼" inputmode="numeric" maxlength="4">
-            <button class="btn-primary" onclick="authStudent()">進入個人帳本</button>
+            <button class="btn-primary" onclick="authStudent()">驗證登入</button>
         </div>
     </div>
 
     <div id="student-info" style="display:none"></div>
 
     <div id="leader-section" style="display:none; margin-top:20px;">
-        <button class="btn-primary" style="background:linear-gradient(135deg, #d4af37, #8a6d1a); color:#fff;" onclick="openLeaderAtt()">⭐ 進入組長點名系統</button>
+        <button class="btn-primary" style="background:linear-gradient(135deg, #1b5e20, #2e7d32);" onclick="openLeaderAtt()">⭐ 進入組長點名系統</button>
     </div>
 
     <div class="admin-btn" onclick="showLock()">SYSTEM ADMIN ACCESS</div>
   </div>
 
-  <div class="app-container" id="view-admin" style="display:none; padding-bottom:100px;">
+  <div class="app-container admin-panel" id="view-admin" style="display:none; padding-bottom:100px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h2 id="admin-title" style="color:var(--gold-matte); margin:0">後台管理</h2>
-        <button id="leader-exit" onclick="location.reload()" style="background:none; border:1px solid #444; color:#888; border-radius:5px; padding:5px 10px; display:none;">結束點名</button>
+        <h2 id="admin-title" style="color:var(--gold-deep); margin:0">後台管理</h2>
+        <button id="leader-exit" onclick="location.reload()" style="background:white; border:1px solid var(--gold-main); color:var(--gold-deep); border-radius:8px; padding:8px 15px; display:none; font-weight:bold;">退出點名</button>
     </div>
     
     <div id="pane-list"></div> 
     
     <div id="pane-att" style="display:none">
-        <h3>今日點名</h3>
+        <h3 style="color:var(--gold-deep)">今日點名</h3>
         <div id="att-grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;"></div>
-        <button class="btn-primary" style="margin-top:25px" onclick="submitAtt()">💾 儲存點名紀錄</button>
+        <button class="btn-primary" style="margin-top:25px" onclick="submitAtt()">儲存點名結果</button>
     </div>
 
     <div id="pane-rep" style="display:none">
-        <h3>財務統計</h3>
+        <h3 style="color:var(--gold-deep)">財務報表</h3>
         <div class="main-card" style="text-align:center">
-            <div id="total-sum" style="font-size:48px; color:var(--accent-red); font-weight:900">$0</div>
-            <div id="debt-list" style="text-align:left; font-size:14px; margin-top:25px; color:#ccc; border-top:1px solid #222; padding-top:15px"></div>
+            <div id="total-sum" style="font-size:48px; color:var(--accent-red); font-weight:900; text-shadow:1px 1px 2px rgba(0,0,0,0.1)">$0</div>
+            <div id="debt-list" style="text-align:left; font-size:14px; margin-top:25px; color:var(--gold-deep); border-top:1px solid rgba(138,109,26,0.1); padding-top:15px"></div>
         </div>
-        <button class="btn-primary" style="margin-top:15px; background:linear-gradient(135deg, #34c759, #248a3d);" onclick="doExcel()">📊 匯出 Excel</button>
+        <button class="btn-primary" style="margin-top:15px; background:linear-gradient(135deg, #34c759, #248a3d);" onclick="doExcel()">📊 匯出 Excel 報表</button>
     </div>
 
     <div id="pane-set" style="display:none">
-        <h3>系統設定</h3>
+        <h3 style="color:var(--gold-deep)">設定中心</h3>
         <button class="btn-primary" onclick="setAdminPwd()">🔐 修改管理密碼</button>
-        <button class="btn-primary" style="margin-top:15px; background:#333; color:#fff;" onclick="location.reload()">← 返回入口</button>
+        <button class="btn-primary" style="margin-top:15px; background:#fff; color:var(--gold-deep); border:1px solid var(--gold-deep)" onclick="location.reload()">← 返回首頁入口</button>
+        <button class="btn-primary" style="margin-top:40px; background:var(--accent-red); color:#fff;" onclick="fullReset()">🛑 清除所有資料</button>
     </div>
 
     <div class="nav-bar" id="admin-nav">
@@ -107,22 +174,24 @@
   </div>
 
   <div id="lock-overlay">
-      <div style="font-size:40px; color:var(--gold-matte); margin-bottom:10px">𝄞</div>
+      <div style="font-size:50px; color:var(--gold-deep); margin-bottom:10px">𝄞</div>
+      <div style="color:var(--gold-deep); margin-bottom:25px; font-weight:900; letter-spacing:2px">後台身分驗證</div>
       <div id="pwd-dots" style="display:flex; gap:18px; margin-bottom:35px">
-          <div style="width:18px; height:18px; border:2px solid #555; border-radius:50%"></div>
-          <div style="width:18px; height:18px; border:2px solid #555; border-radius:50%"></div>
-          <div style="width:18px; height:18px; border:2px solid #555; border-radius:50%"></div>
-          <div style="width:18px; height:18px; border:2px solid #555; border-radius:50%"></div>
+          <div style="width:18px; height:18px; border:2px solid var(--gold-deep); border-radius:50%"></div>
+          <div style="width:18px; height:18px; border:2px solid var(--gold-deep); border-radius:50%"></div>
+          <div style="width:18px; height:18px; border:2px solid var(--gold-deep); border-radius:50%"></div>
+          <div style="width:18px; height:18px; border:2px solid var(--gold-deep); border-radius:50%"></div>
       </div>
       <div style="display:grid; grid-template-columns:repeat(3,80px); gap:18px">
           <script>for(let i=1; i<=9; i++) document.write(`<button class="btn-n" onclick="press(${i})">${i}</button>`);</script>
-          <button onclick="document.getElementById('lock-overlay').style.display='none'" style="background:none; color:#555; border:none;">✕</button>
+          <button onclick="document.getElementById('lock-overlay').style.display='none'" style="background:none; color:var(--gold-deep); border:none; font-weight:bold">✕</button>
           <button class="btn-n" onclick="press(0)">0</button>
-          <button onclick="press('del')" style="background:none; color:#555; border:none;">⌫</button>
+          <button onclick="press('del')" style="background:none; color:var(--gold-deep); border:none; font-weight:bold">⌫</button>
       </div>
   </div>
 
 <script>
+  // Firebase 設定
   const _c = { apiKey: "AIzaSyC_6aza1KH8GXxUbYBraK7wcqPrSUSF-Ns", authDomain: "jjvsmusic.firebaseapp.com", databaseURL: "https://jjvsmusic-default-rtdb.firebaseio.com", projectId: "jjvsmusic", storageBucket: "jjvsmusic.appspot.com", messagingSenderId: "754846318347", appId: "1:754846318347:web:865668e27c1529688432a5" };
   firebase.initializeApp(_c); const _db = firebase.database();
   
@@ -149,11 +218,7 @@
     else alert("密碼錯誤");
   }
 
-  function checkPermission(s) {
-    _isLeader = s.isLeader || false;
-    renderUser();
-    if(_isLeader) document.getElementById('leader-section').style.display = 'block';
-  }
+  function checkPermission(s) { _isLeader = s.isLeader || false; renderUser(); if(_isLeader) document.getElementById('leader-section').style.display = 'block'; }
 
   function renderUser() {
     document.getElementById('student-login').style.display = 'none';
@@ -161,25 +226,23 @@
     const debt = Math.max(0, (s.lateCount||0) - (s.paidCount||0)) * 100;
     const h = s.history ? Object.values(s.history).reverse() : [];
     let html = `<div class="main-card">
-        <div style="font-size:14px; opacity:0.7">${s.name}${_isLeader?'<span class="leader-badge">組長權限</span>':''} ${s.notification ? '<span class="badge-note">𝅘𝅥𝅮</span>' : ''}</div>
-        <div style="font-size:54px; font-weight:900; color:${debt>0?'var(--accent-red)':'var(--gold-matte)'}; margin:15px 0;">$${debt}</div>
-        ${s.notification ? `<div class="main-card" style="background:rgba(212,175,55,0.1); padding:15px; border:1px dashed var(--gold-matte); font-size:14px;">📢 通知：${s.notification}</div>` : ''}
+        <div style="font-size:14px; color:var(--gold-deep); font-weight:bold">${s.name}${_isLeader?'<span class="leader-badge">組長</span>':''} ${s.notification ? '<span class="badge-note">𝅘𝅥𝅮</span>' : ''}</div>
+        <div style="font-size:54px; font-weight:900; color:${debt>0?'var(--accent-red)':'var(--gold-deep)'}; margin:15px 0;">$${debt}</div>
+        ${s.notification ? `<div class="main-card" style="background:white; padding:15px; border:1px dashed var(--gold-main); font-size:14px;">📢 通知：${s.notification}</div>` : ''}
       </div>`;
-    document.getElementById('student-info').innerHTML = html + `<div style="margin-top:20px; font-weight:bold; color:var(--gold-matte)">紀錄回顧</div>` + h.map(i => `<div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid #222; font-size:14px;"><span>${i.type}${i.amount?' $'+i.amount:''}</span><span style="opacity:0.4">${i.time}</span></div>`).join('');
+    document.getElementById('student-info').innerHTML = html + `<div style="margin-top:20px; font-weight:bold; color:var(--gold-deep)">紀錄明細</div>` + h.map(i => `<div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid rgba(138,109,26,0.1); font-size:14px; color:var(--gold-deep)"><span>${i.type}${i.amount?' $'+i.amount:''}</span><span style="opacity:0.6">${i.time}</span></div>`).join('');
     document.getElementById('student-info').style.display = 'block';
   }
 
-  // 組長點名進入
   function openLeaderAtt() {
       document.getElementById('view-student').style.display = 'none';
       document.getElementById('view-admin').style.display = 'block';
       document.getElementById('admin-title').innerText = "組長點名系統";
       document.getElementById('leader-exit').style.display = 'block';
-      document.getElementById('admin-nav').style.display = 'none'; // 組長不能切換報表
+      document.getElementById('admin-nav').style.display = 'none';
       go('att');
   }
 
-  // 管理端鎖屏與進入
   function showLock() { document.getElementById('lock-overlay').style.display='flex'; _pin=""; updDots(); }
   function press(v) {
     if(v === 'del') _pin = _pin.slice(0,-1);
@@ -192,32 +255,28 @@
             document.getElementById('view-admin').style.display = 'block';
             document.getElementById('admin-nav').style.display = 'flex';
             go('list');
-        } else { alert("錯誤"); _pin=""; updDots(); }
+        } else { alert("管理密碼錯誤"); _pin=""; updDots(); }
     }
   }
-  function updDots() { const ds = document.getElementById('pwd-dots').children; for(let i=0; i<4; i++) ds[i].style.background = i < _pin.length ? 'var(--gold-matte)' : 'none'; }
+  function updDots() { const ds = document.getElementById('pwd-dots').children; for(let i=0; i<4; i++) ds[i].style.background = i < _pin.length ? 'var(--gold-deep)' : 'none'; }
 
   function renderAdminList() {
     const l = document.getElementById('pane-list'); if(!l) return;
     l.innerHTML = Object.entries(_all).map(([id, s]) => {
       const d = Math.max(0, (s.lateCount||0) - (s.paidCount||0)) * 100;
       return `<div class="list-item">
-                <div style="display:flex; justify-content:space-between;"><b>${s.name}</b> <span>$${d}</span></div>
-                <div style="display:flex; gap:5px; margin-top:10px;">
-                    <button onclick="quickPay('${id}',${d})" style="flex:1; background:var(--gold-matte); border:none; padding:8px; border-radius:5px;">💰收錢</button>
-                    <button onclick="quickLate('${id}')" style="flex:1; background:#444; color:#fff; border:none; padding:8px; border-radius:5px;">⏰遲到</button>
-                    <button onclick="toggleLeader('${id}',${s.isLeader})" style="flex:0.5; background:${s.isLeader?'#d4af37':'#222'}; color:${s.isLeader?'#000':'#888'}; border:none; border-radius:5px;">${s.isLeader?'⭐':'☆'}</button>
+                <div style="display:flex; justify-content:space-between; color:var(--gold-deep);"><b>${s.name}</b> <span style="font-weight:900">$${d}</span></div>
+                <div style="display:flex; gap:8px; margin-top:12px;">
+                    <button onclick="quickPay('${id}',${d})" style="flex:1; background:var(--gold-deep); color:#fff; border:none; padding:12px; border-radius:10px; font-weight:bold;">💰收錢</button>
+                    <button onclick="quickLate('${id}')" style="flex:1; background:#fff; color:var(--gold-deep); border:1px solid var(--gold-deep); padding:12px; border-radius:10px; font-weight:bold;">⏰遲到</button>
+                    <button onclick="toggleLeader('${id}',${s.isLeader})" style="flex:0.5; background:${s.isLeader?'var(--gold-deep)':'#eee'}; color:${s.isLeader?'#fff':'#999'}; border:none; border-radius:10px;">${s.isLeader?'⭐':'☆'}</button>
                 </div>
               </div>`;
     }).join('');
   }
 
-  function toggleLeader(id, cur) {
-      _db.ref(`students/${id}`).update({ isLeader: !cur });
-      alert(`已${!cur?'升格':'取消'}該生點名權限`);
-  }
-
-  function quickPay(id, debt) { const a = prompt(`收錢：`, debt); if(a>0) { _db.ref(`students/${id}`).update({ paidCount: (_all[id].paidCount||0) + Math.floor(a/100) }); _db.ref(`students/${id}/history`).push({ type:'繳費', amount: a, time: new Date().toLocaleDateString() }); } }
+  function toggleLeader(id, cur) { _db.ref(`students/${id}`).update({ isLeader: !cur }); alert(`已${!cur?'授權組長':'取消組長'}權限`); }
+  function quickPay(id, debt) { const a = prompt(`收錢紀錄 - ${_all[id].name}：`, debt); if(a>0) { _db.ref(`students/${id}`).update({ paidCount: (_all[id].paidCount||0) + Math.floor(a/100) }); _db.ref(`students/${id}/history`).push({ type:'繳費', amount: a, time: new Date().toLocaleDateString() }); } }
   function quickLate(id) { _db.ref(`students/${id}`).update({ lateCount: (_all[id].lateCount||0) + 1 }); _db.ref(`students/${id}/history`).push({ type:'遲到', time: new Date().toLocaleDateString() }); }
 
   function go(p, el) {
@@ -227,25 +286,25 @@
       if(p === 'att') {
           document.getElementById('att-grid').innerHTML = Object.entries(_all).map(([id, s]) => {
               _attData[id] = 'present';
-              return `<div id="at-${id}" onclick="tk('${id}')" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; text-align:center; font-size:12px">${s.name}<br>✅</div>`;
+              return `<div id="at-${id}" onclick="tk('${id}')" style="background:white; border:1px solid var(--gold-main); padding:15px; border-radius:12px; text-align:center; font-size:12px; color:var(--gold-deep)">${s.name}<br>✅</div>`;
           }).join('');
       }
   }
   window.tk = (id) => {
       const s = { 'present':['late','⏰'], 'late':['absent','❌'], 'absent':['leave','🍃'], 'leave':['present','✅'] };
-      const cur = _attData[id];
-      _attData[id] = s[cur][0];
+      const cur = _attData[id]; _attData[id] = s[cur][0];
       document.getElementById('at-'+id).innerHTML = `${_all[id].name}<br>${s[cur][1]}`;
-  }
+      document.getElementById('at-'+id).style.background = cur === 'present' ? 'var(--gold-light)' : 'white';
+  };
   function submitAtt() {
       const t = new Date().toLocaleDateString();
       Object.entries(_attData).forEach(([id, st]) => { if(st==='late') { _db.ref(`students/${id}`).update({ lateCount: (_all[id].lateCount||0) + 1 }); _db.ref(`students/${id}/history`).push({ type:'遲到', time: t }); } });
-      alert("儲存成功"); 
-      if(_isLeader && document.getElementById('admin-nav').style.display === 'none') { location.reload(); } else { go('list'); }
+      alert("今日點名已存檔！"); if(_isLeader && document.getElementById('admin-nav').style.display === 'none') { location.reload(); } else { go('list'); }
   }
-  function updateStats() { let sum = 0; let html = ""; Object.values(_all).forEach(s => { const d = Math.max(0, (s.lateCount||0) - (s.paidCount||0)) * 100; sum += d; if(d > 0) html += `<div style="margin-bottom:8px">${s.name}: $${d}</div>`; }); if(document.getElementById('total-sum')) document.getElementById('total-sum').innerText = '$' + sum; if(document.getElementById('debt-list')) document.getElementById('debt-list').innerHTML = html; }
-  function doExcel() { const d = [["姓名", "欠費"]]; Object.values(_all).forEach(s => d.push([s.name, Math.max(0, (s.lateCount||0)-(s.paidCount||0))*100])); const ws = XLSX.utils.aoa_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Report"); XLSX.writeFile(wb, "Report.xlsx"); }
-  function setAdminPwd() { const p = prompt("新管理密碼"); if(p) _db.ref('adminConfig/password').set(p).then(()=>location.reload()); }
+  function updateStats() { let sum = 0; let html = ""; Object.values(_all).forEach(s => { const d = Math.max(0, (s.lateCount||0) - (s.paidCount||0)) * 100; sum += d; if(d > 0) html += `<div style="margin-bottom:10px; color:var(--gold-deep)"><b>${s.name}</b>: $${d}</div>`; }); if(document.getElementById('total-sum')) document.getElementById('total-sum').innerText = '$' + sum; if(document.getElementById('debt-list')) document.getElementById('debt-list').innerHTML = html; }
+  function doExcel() { const d = [["姓名", "欠費明細"]]; Object.values(_all).forEach(s => d.push([s.name, Math.max(0, (s.lateCount||0)-(s.paidCount||0))*100])); const ws = XLSX.utils.aoa_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "報表"); XLSX.writeFile(wb, "畢業公演財務報表.xlsx"); }
+  function setAdminPwd() { const p = prompt("設定管理員 4 位新密碼"); if(p && p.length===4) _db.ref('adminConfig/password').set(p).then(()=>location.reload()); }
+  function fullReset() { if(confirm("確定重置所有數據嗎？")) _db.ref('students').remove().then(()=>location.reload()); }
 </script>
 </body>
 </html>
