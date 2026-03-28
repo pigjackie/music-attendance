@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>112年莊敬音樂科畢業公演管理系統 V1.6</title>
+<title>112年莊敬音樂科畢業公演管理系統 V1.7</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -24,7 +24,6 @@
   .admin-panel { display: none; padding-bottom: 160px; }
   .list-item { background: rgba(255,255,255,0.05); padding: 18px; border-radius: 20px; margin-bottom: 15px; border-left: 5px solid var(--gold-main); }
 
-  /* 方格設計 */
   .quota-box-container { display: flex; gap: 10px; margin-top: 12px; align-items: center; }
   .quota-box { width: 40px; height: 40px; border: 2px solid var(--gold-main); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
   .quota-box.used { background: var(--gold-main); color: #000; }
@@ -34,7 +33,7 @@
   .nav-item.active { color: var(--gold-main); font-weight: 900; }
   
   .status-tag { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; }
-  .tag-unpaid { background: #444; color: #bbb; }
+  .tag-unpaid { background: var(--accent-red); color: #fff; }
   .tag-paid { background: var(--success); color: #fff; }
   
   input { width: 100%; padding: 18px; border-radius: 15px; border: 1px solid rgba(212, 175, 55, 0.4); background: rgba(0,0,0,0.5); color: #fff; font-size: 18px; margin-bottom: 15px; text-align: center; }
@@ -45,7 +44,7 @@
   <div class="app-container" id="view-student">
     <div class="header"><div class="main-title">112年莊敬高職音樂科<br>畢業公演</div></div>
     <div id="student-login" class="main-card">
-        <input type="text" id="stu-name" placeholder="請輸入姓名查詢">
+        <input type="text" id="stu-name" placeholder="請輸入姓名查詢紀錄">
         <button class="btn-gold" onclick="searchStudent()">登入查詢</button>
     </div>
     <div id="student-info" style="display:none"></div>
@@ -54,7 +53,7 @@
 
   <div class="app-container admin-panel" id="view-admin">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-        <h2 style="font-size:24px; color:var(--gold-main); margin:0;">後台管理</h2>
+        <h2 style="font-size:24px; color:var(--gold-main); margin:0;">後台管理系統</h2>
         <button onclick="location.reload()" style="background:none; border:1px solid #555; color:#888; border-radius:10px; padding:5px 12px;">登出</button>
     </div>
     
@@ -67,7 +66,7 @@
 
     <div id="pane-rep" style="display:none">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h3 style="margin:0; color:var(--gold-light);">總欠費報表</h3>
+            <h3 style="margin:0; color:var(--gold-light);">全班總欠費</h3>
             <div id="total-sum-badge" style="background:var(--accent-red); padding:8px 15px; border-radius:15px; font-weight:bold;">$0</div>
         </div>
         <div class="main-card" style="padding:15px; height: 50vh; overflow-y: auto;"><div id="full-report-list"></div></div>
@@ -75,9 +74,9 @@
 
     <div id="pane-set" style="display:none">
         <div class="main-card">
-            <h3 style="color:var(--gold-main);">系統資料管理</h3>
-            <p style="font-size:14px; color:#888; margin-bottom:20px;">注意：此操作將清除所有同學的罰款、道具費、已繳金額、請假機會以及所有歷史明細。</p>
-            <button class="btn-gold" onclick="resetAllData()" style="background:var(--accent-red); color:#fff;">🛑 徹底清空帳目資料</button>
+            <h3 style="color:var(--gold-main);">帳目重設區</h3>
+            <p style="font-size:14px; color:#888; margin-bottom:20px;">此操作將會：<br>1. 歸零所有人的遲到/道具罰款<br>2. 歸零已繳金額紀錄<br>3. 恢復所有人 2 次請假機會<br>4. 重設畢業基金為「未繳」狀態</p>
+            <button class="btn-gold" onclick="resetAllAccounting()" style="background:var(--accent-red); color:#fff;">🛑 確定帳目全部重設</button>
         </div>
     </div>
 
@@ -90,12 +89,7 @@
   </div>
 
   <div id="lock-overlay" style="display:none; position:fixed; inset:0; background:#000; z-index:3000; flex-direction:column; align-items:center; justify-content:center;">
-      <div id="pwd-dots" style="display:flex; gap:20px; margin-bottom:40px">
-          <div style="width:15px; height:15px; border:2px solid #555; border-radius:50%"></div>
-          <div style="width:15px; height:15px; border:2px solid #555; border-radius:50%"></div>
-          <div style="width:15px; height:15px; border:2px solid #555; border-radius:50%"></div>
-          <div style="width:15px; height:15px; border:2px solid #555; border-radius:50%"></div>
-      </div>
+      <div id="pwd-dots" style="display:flex; gap:20px; margin-bottom:40px"><div style="width:15px; height:15px; border:2px solid #555; border-radius:50%"></div><div style="width:15px; height:15px; border:2px solid #555; border-radius:50%"></div><div style="width:15px; height:15px; border:2px solid #555; border-radius:50%"></div><div style="width:15px; height:15px; border:2px solid #555; border-radius:50%"></div></div>
       <div style="display:grid; grid-template-columns:repeat(3,80px); gap:20px">
           <script>for(let i=1; i<=9; i++) document.write(`<button style="width:70px;height:70px;border-radius:50%;background:#1c1c1e;color:#fff;font-size:24px;" onclick="press(${i})">${i}</button>`);</script>
           <button style="color:#555" onclick="document.getElementById('lock-overlay').style.display='none'">✕</button>
@@ -105,7 +99,7 @@
   </div>
 
 <script>
-  const APP_VERSION = "1.6";
+  const APP_VERSION = "1.7";
   const _c = { apiKey: "AIzaSyC_6aza1KH8GXxUbYBraK7wcqPrSUSF-Ns", authDomain: "jjvsmusic.firebaseapp.com", databaseURL: "https://jjvsmusic-default-rtdb.firebaseio.com", projectId: "jjvsmusic", storageBucket: "jjvsmusic.appspot.com", messagingSenderId: "754846318347", appId: "1:754846318347:web:865668e27c1529688432a5" };
   firebase.initializeApp(_c); const _db = firebase.database();
   let _all = {}, _user = null, _pin = "", _mPin = "0902", _attData = {};
@@ -119,25 +113,27 @@
     const l = document.getElementById('h-l'); if(!l) return;
     const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99));
     l.innerHTML = sorted.map(([id, s]) => {
-      const debt = (s.totalFine||0) + (s.propFine||0) - (s.paidAmt||0);
+      // 這裡計算包含基金的欠費
+      const fundDebt = s.fundPaid ? 0 : 1300;
+      const debt = (s.totalFine||0) + (s.propFine||0) + fundDebt - (s.paidAmt||0);
       const q = s.leaveQuota !== undefined ? s.leaveQuota : 2;
       return `
       <div class="list-item">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <b>${s.no}. ${s.name}</b>
           <span class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}" onclick="toggleFund('${id}', ${s.fundPaid})">
-            基金：${s.fundPaid?'已繳':'未繳'}
+            基金：${s.fundPaid?'已繳':'未繳($1300)'}
           </span>
         </div>
         <div class="quota-box-container">
           <div class="quota-box ${q <= 1 ? 'used' : ''}" onclick="adminDeduct('${id}', 1)">${q <= 1 ? '✔' : ''}</div>
           <div class="quota-box ${q <= 0 ? 'used' : ''}" onclick="adminDeduct('${id}', 0)">${q <= 0 ? '✔' : ''}</div>
-          <span style="margin-left:auto; color:var(--accent-red); font-weight:bold;">欠費: $${debt}</span>
+          <span style="margin-left:auto; color:var(--accent-red); font-weight:bold;">總欠費: $${debt}</span>
         </div>
         <div style="display:flex; gap:8px; margin-top:12px;">
-          <button onclick="setProp('${id}')" style="flex:1; padding:10px; border-radius:10px; background:#222; color:#fff; font-size:12px; border:1px solid #444;">道具費</button>
-          <button onclick="quickAddFine('${id}', 100, '遲到罰款')" style="flex:1; padding:10px; border-radius:10px; background:var(--accent-red); color:#fff; font-size:12px; border:none;">遲到+100</button>
-          <button onclick="adminPaid('${id}')" style="flex:1; padding:10px; border-radius:10px; background:var(--gold-main); color:#000; font-weight:bold; font-size:12px; border:none;">收現</button>
+          <button onclick="setProp('${id}')" style="flex:1; padding:10px; border-radius:10px; background:#222; color:#fff; font-size:11px; border:1px solid #444;">道具明細</button>
+          <button onclick="quickAddFine('${id}', 100, '遲到罰款')" style="flex:1; padding:10px; border-radius:10px; background:var(--accent-red); color:#fff; font-size:11px; border:none;">遲到+100</button>
+          <button onclick="adminPaid('${id}')" style="flex:1; padding:10px; border-radius:10px; background:var(--gold-main); color:#000; font-weight:bold; font-size:11px; border:none;">收現</button>
         </div>
       </div>`;
     }).join('');
@@ -145,22 +141,23 @@
 
   function renderUser() {
     const s = _all[_user];
-    const debt = (s.totalFine||0) + (s.propFine||0) - (s.paidAmt||0);
+    const fundDebt = s.fundPaid ? 0 : 1300;
+    const debt = (s.totalFine||0) + (s.propFine||0) + fundDebt - (s.paidAmt||0);
     const q = s.leaveQuota !== undefined ? s.leaveQuota : 2;
     const h = s.history ? Object.values(s.history).reverse() : [];
     document.getElementById('student-info').innerHTML = `
       <div class="main-card" style="text-align:center;">
-        <div style="font-size:22px; font-weight:bold; color:var(--gold-main);">${s.name}</div>
+        <div style="font-size:22px; font-weight:bold; color:var(--gold-main);">${s.name} 同學</div>
         <div style="font-size:56px; font-weight:900; margin:15px 0; color:${debt>0?'var(--accent-red)':'var(--gold-main)'};">$${debt}</div>
         <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-           <div class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">基金：${s.fundPaid?'已繳清':'未繳'}</div>
-           <div class="status-tag" style="background:#444">折抵機會剩餘：${q} 次</div>
+           <div class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">基金：${s.fundPaid?'已繳清':'未繳($1300)'}</div>
+           <div class="status-tag" style="background:#444">折抵剩餘：${q} 次</div>
         </div>
-        ${s.propNote ? `<div style="margin-top:15px; font-size:13px; color:#aaa; line-height:1.5;">道具費明細：<br>${s.propNote}</div>` : ''}
+        ${s.propFine ? `<div style="margin-top:15px; font-size:14px; color:#aaa; border-top:1px solid #333; padding-top:10px;">道具費：$${s.propFine}<br><small>${s.propNote || '無備註'}</small></div>` : ''}
       </div>
-      <div style="margin:20px 0 10px; font-weight:bold; color:var(--gold-light);">收支明細</div>
+      <div style="margin:20px 0 10px; font-weight:bold; color:var(--gold-light);">收支與老師註記紀錄</div>
     ` + h.map(i => `<div style="padding:12px 0; border-bottom:1px solid #222; font-size:14px; display:flex; justify-content:space-between;">
-        <span>${i.type}${i.note ? ' ('+i.note+')' : ''}</span>
+        <span>${i.type}${i.note ? ' <br><small style="color:var(--gold-main)">註：'+i.note+'</small>' : ''}</span>
         <span style="text-align:right;">${i.amt?'$'+i.amt:''}<br><small style="color:#444">${i.time}</small></span>
       </div>`).join('');
     document.getElementById('student-info').style.display = 'block';
@@ -170,22 +167,23 @@
       const s = _all[id];
       const q = s.leaveQuota !== undefined ? s.leaveQuota : 2;
       if (q <= target) {
-          if(confirm("要取消此折抵並恢復 $100 嗎？")) {
+          if(confirm("取消折抵並恢復 $100 罰款？")) {
               _db.ref(`students/${id}`).update({ leaveQuota: q + 1, totalFine: (s.totalFine || 0) + 100 });
-              _db.ref(`students/${id}/history`).push({ type: "取消折抵", amt: 100, time: new Date().toLocaleDateString() });
+              _db.ref(`students/${id}/history`).push({ type: "老師取消折抵", amt: 100, time: new Date().toLocaleDateString() });
           }
       } else {
-          if(confirm(`消耗 ${s.name} 一次機會折抵 $100？`)) {
+          if(confirm(`消耗一次機會幫 ${s.name} 折抵 $100？`)) {
               _db.ref(`students/${id}`).update({ leaveQuota: q - 1, totalFine: Math.max(0, (s.totalFine || 0) - 100) });
-              _db.ref(`students/${id}/history`).push({ type: "機會折抵", amt: -100, time: new Date().toLocaleDateString() });
+              _db.ref(`students/${id}/history`).push({ type: "老師手動折抵", amt: -100, time: new Date().toLocaleDateString() });
           }
       }
   }
 
   function setProp(id) { 
-      const amt = prompt("道具費金額：", _all[id].propFine || 0);
-      const note = prompt("明細(戲服/佈景/道具等)：", _all[id].propNote || "");
-      if(amt !== null) _db.ref(`students/${id}`).update({ propFine: parseInt(amt), propNote: note });
+      const amt = prompt("輸入道具費金額：", _all[id].propFine || 0);
+      if(amt === null) return;
+      const note = prompt("輸入道具明細(戲服、武器、佈景)：", _all[id].propNote || "");
+      _db.ref(`students/${id}`).update({ propFine: parseInt(amt), propNote: note });
   }
 
   function quickAddFine(id, amt, type) { 
@@ -209,11 +207,11 @@
       _attData[id] = { status: 'present', note: '' };
       return `<div id="at-${id}" onclick="tk('${id}')" style="background:rgba(255,255,255,0.05); padding:12px 5px; border-radius:15px; text-align:center; font-size:12px;">
         ${s.name}<br><span id="icon-${id}" style="font-size:24px;">✅</span><br>
-        <button onclick="setNote(event, '${id}')" style="font-size:10px; background:#333; color:#777; border:none; border-radius:5px; margin-top:5px;">註記</button>
+        <button onclick="setNote(event, '${id}')" style="font-size:10px; background:#444; color:#fff; border:none; border-radius:5px; margin-top:5px; padding:2px 8px;">註記</button>
       </div>`;
     }).join('');
   }
-  window.setNote = (e, id) => { e.stopPropagation(); const n = prompt("輸入註記："); if(n!==null) _attData[id].note = n; }
+  window.setNote = (e, id) => { e.stopPropagation(); const n = prompt("請輸入老師註記(如:公假、遲到原因)："); if(n!==null) _attData[id].note = n; }
   window.tk = (id) => {
       const sMap = { 'present':['late','⏰','遲100'], 'late':['leave','🍃','核假'], 'leave':['absent','❌','缺席'], 'absent':['present','✅','出席'] };
       const cur = _attData[id].status;
@@ -225,9 +223,9 @@
       const t = new Date().toLocaleDateString();
       Object.entries(_attData).forEach(([id, data]) => {
           if(data.status === 'late') quickAddFine(id, 100, "點名遲到");
-          if(data.note) _db.ref(`students/${id}/history`).push({ type: "老師註記", note: data.note, time: t });
+          if(data.note) _db.ref(`students/${id}/history`).push({ type: "點名註記", note: data.note, time: t });
       });
-      alert("儲存成功！"); go('list');
+      alert("存檔成功！"); go('list');
   }
 
   function go(p, el) { 
@@ -243,8 +241,9 @@
     const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99));
     let total = 0;
     listDiv.innerHTML = sorted.map(([id, s]) => {
-      const d = (s.totalFine||0) + (s.propFine||0) - (s.paidAmt||0); total += d;
-      return `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #222; font-size:14px;"><span>${s.no}. ${s.name}</span><span style="color:${d>0?'var(--accent-red)':'#666'}">$${d}</span></div>`;
+      const fundD = s.fundPaid ? 0 : 1300;
+      const d = (s.totalFine||0) + (s.propFine||0) + fundD - (s.paidAmt||0); total += d;
+      return `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #222; font-size:14px;"><span>${s.no}. ${s.name} ${s.fundPaid?'':'(欠基金)'}</span><span style="color:${d>0?'var(--accent-red)':'#666'}">$${d}</span></div>`;
     }).join('');
     document.getElementById('total-sum-badge').innerText = '$' + total;
   }
@@ -258,12 +257,12 @@
       renderUser();
   }
 
-  function resetAllData() { 
-      if(confirm("❗確定要徹底清空帳目？此動作無法還原！")) { 
+  function resetAllAccounting() { 
+      if(confirm("確定帳目重設？\n這會清除罰款、道具費、已繳金額，並恢復機會。")) { 
           Object.keys(_all).forEach(id => {
               _db.ref(`students/${id}`).update({ totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false, propNote:"", history:null });
           });
-          alert("所有帳目已清空"); 
+          alert("所有同學帳目已歸零重設！"); 
       } 
   }
 
