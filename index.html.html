@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>畢業公演出席系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- ====================================================
+     ⚙️  FIREBASE 設定 — 請在這裡填入你的設定值
+     ==================================================== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, update, onValue, push }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // 👇 把這裡換成你的 Firebase 設定
+  const firebaseConfig = {
+    apiKey:            "AIzaSyC_6aza1KH8GXxUbYBraK7wcqPrSUSF-Ns",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    databaseURL:       "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+    projectId:         "YOUR_PROJECT",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // 學生預設名單
+  const DEFAULT_NAMES = [
+    '毛語程','林叡成','田宇紘','吳昆達','吳宥良','黃崇恩','林宏澤','金品澔',
+    '劉宸昀','蔡呈樂','蘇瑞吾','梁之凡','蔡宗佑','黃穩達','馮康維','倪秉澤',
+    '廖敏君','劉慶霈','蔡慧琳','鄭淳融','魏宜宸','徐婉瑜','安兪臻','江岑君',
+    '池宛昕','李曉萍','周玄禮','王以昕','林祐立','邱詩涵','胡云珊','蔡逸宣',
+    '高慧君','張路淇','陳芃瑾','陳雨彤','陳宥安','陳圓卿','傅克諳','曾妘湘'
+  ];
+
+  const FEE = 100;
+  let students = {};   // { id: {name, lateCount, paidCount, absentCount, presentCount, history:[]} }
+  let isAdmin = false;
+
+  // ── 初始化資料庫（首次使用自動建立學生資料）──
+  async function initStudents() {
+    const snap = await get(ref(db, 'students'));
+    if (!snap.exists()) {
+      const batch = {};
+      DEFAULT_NAMES.forEach((name, i) => {
+        const id = 'S' + String(i+1).padStart(3,'0');
+        batch[id] = { name, lateCount:0, paidCount:0, absentCount:0, presentCount:0, history:{} };
+      });
+      await set(ref(db, 'students'), batch);
+    }
+    listenStudents();
+  }
+
+  // ── 即時監聽資料變更 ──
+  function listenStudents() {
+    onValue(ref(db, 'students'), snap => {
+      students = snap.val() || {};
+      // 把 history 物件轉成陣列
+      Object.values(students).forEach(s => {
+        s.history = s.history ? Object.values(s.history) : [];
+      });
+      if (isAdmin) renderAdminList();
+      updateAdminHeader();
+    });
+  }
+
+  // ════════════════════════════════
+  //  PIN 鎖定畫面
+  // ════════════════════════════════
+  let pinBuffer = '';
+  window.pinInput = function(n) {
+    if (pinBuffer.length >= 4) return;
+    pinBuffer += n;
+    updateDots();
+    if (pinBuffer.length === 4) setTimeout(checkPin, 200);
+  };
+  window.pinDel = function() {
+    pinBuffer = pinBuffer.slice(0,-1);
+    updateDots();
+    document.getElementById('lock-error').textContent = '';
+  };
+  function updateDots() {
+    for (let i=0;i<4;i++)
+      document.getElementById('d'+i).className = 'pin-dot'+(i<pinBuffer.length?' filled':'');
+  }
+  function checkPin() {
+    const stored = localStorage.getItem('gp_pin') || '1234';
+    if (pinBuffer === stored) {
+      isAdmin = true;
+      show('admin-app');
+      hide('lock-screen');
+      hide('student-screen');
+      pinBuffer=''; updateDots();
+    } else {
+      document.getElementById('lock-error').textContent = '密碼錯誤，請再試一次';
+      pinBuffer=''; updateDots();
+    }
+  }
+  window.lockApp = function() {
+    isAdmin = false;
+    show('lock-screen');
+    hide('admin-app');
+    pinBuffer=''; updateDots();
+    document.getElementById('lock-error').textContent='';
+  };
+
+  // ════════════════════════════════
+  //  學生查詢
+  // ════════════════════════════════
+  window.studentLookup = function() {
+    const query = document.getElementById('student-name-input').value.trim();
+    if (!query) { showToast('請輸入姓名'); return; }
+    const found = Object.entries(students).find(([,s]) => s.name === query);
+    if (!found) { document.getElementById('student-result').innerHTML = `<div class="empty-state">找不到「${query}」<br>請確認姓名是否正確</div>`; return; }
+    const [id, s] = found;
+    const owed = Math.max(0, s.lateCount - s.paidCount) * FEE;
+    const hist = [...s.history].reverse();
+    const labels = {late:'⏰ 遲到', absent:'❌ 缺席', present:'✅ 出席', paid:'💰 繳費'};
+    document.getElementById('student-result').innerHTML = `
+      <div class="student-card" style="margin-bottom:12px">
+        <div class="card-stripe ${owed>0?'':'green'}"></div>
+        <div class="card-top">
+          <div><div class="student-name">${s.name}</div><div class="student-num">${id}</div></div>
+          <div class="fee-badge ${owed>0?'owed':s.lateCount>0?'paid':'zero'}">${owed>0?'欠 $'+owed:s.lateCount>0?'✓ 已繳清':'無欠費'}</div>
+        </div>
+        <div class="card-pills">
+          <div class="pill">遲到 <span>${s.lateCount}</span> 次</div>
+          <div class="pill">缺席 <span>${s.absentCount}</span> 次</div>
+          <div class="pill">出席 <span>${s.presentCount}</span> 次</div>
+          <div class="pill">已繳 <span>${s.paidCount}</span> 次</div>
+        </div>
+      </div>
+      <div class="section-label">詳細記錄</div>
+      ${hist.length ? hist.map(h=>`
+        <div class="history-item">
+          <div><span class="tag ${h.type}">${labels[h.type]||h.type}</span> <span style="color:var(--muted);font-size:12px">${h.note||''}</span></div>
+          <span style="color:var(--muted);font-size:12px">${h.time}</span>
+        </div>`).join('') : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">尚無記錄</div>'}
+    `;
+  };
+
+  // ════════════════════════════════
+  //  管理員功能
+  // ════════════════════════════════
+  let adminFilter = 'all';
+  window.setAdminFilter = function(f, el) {
+    adminFilter = f;
+    document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+    el.classList.add('active');
+    renderAdminList();
+  };
+
+  window.renderAdminList = function() {
+    const q = document.getElementById('admin-search').value.trim().toLowerCase();
+    let list = Object.entries(students).filter(([,s]) => {
+      if (q && !s.name.toLowerCase().includes(q)) return false;
+      const owed = Math.max(0, s.lateCount - s.paidCount) * FEE;
+      if (adminFilter==='owed') return s.lateCount>0;
+      if (adminFilter==='unpaid') return owed>0;
+      if (adminFilter==='cleared') return s.lateCount>0&&owed===0;
+      return true;
+    });
+    const container = document.getElementById('admin-list');
+    if (!list.length) { container.innerHTML='<div class="empty-state">無符合學生</div>'; return; }
+    container.innerHTML = list.map(([id,s])=>{
+      const owed = Math.max(0,s.lateCount-s.paidCount)*FEE;
+      return `<div class="student-card">
+        <div class="card-stripe ${s.lateCount===0&&s.absentCount===0?'gray':owed===0&&s.lateCount>0?'green':''}"></div>
+        <div class="card-top">
+          <div><div class="student-name">${s.name}</div><div class="student-num">${id}</div></div>
+          <div class="fee-badge ${owed>0?'owed':s.lateCount>0?'paid':'zero'}">${owed>0?'$'+owed:s.lateCount>0?'已繳清':'無欠費'}</div>
+        </div>
+        <div class="card-pills">
+          <div class="pill">遲到 <span>${s.lateCount}</span></div>
+          <div class="pill">缺席 <span>${s.absentCount}</span></div>
+          <div class="pill">出席 <span>${s.presentCount}</span></div>
+          <div class="pill">已繳 <span>${s.paidCount}</span></div>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-late" onclick="adminMarkLate('${id}')">＋遲到</button>
+          <button class="btn btn-absent" onclick="adminMarkAbsent('${id}')">❌缺席</button>
+          ${owed>0?`<button class="btn btn-paid" onclick="adminMarkPaid('${id}')">✓收$${FEE}</button>`:''}
+          ${s.lateCount>0?`<button class="btn btn-sm" onclick="adminUndoLate('${id}')">↩</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  };
+
+  function updateAdminHeader() {
+    const vals = Object.values(students);
+    document.getElementById('h-total').textContent = '$'+vals.reduce((a,s)=>a+Math.max(0,s.lateCount-s.paidCount)*FEE,0);
+    document.getElementById('h-late').textContent  = vals.reduce((a,s)=>a+s.lateCount,0);
+    document.getElementById('h-absent').textContent= vals.reduce((a,s)=>a+(s.absentCount||0),0);
+  }
+
+  async function addHistory(id, type, note='') {
+    const time = new Date().toLocaleString('zh-TW');
+    await push(ref(db, `students/${id}/history`), {type, time, note});
+  }
+
+  window.adminMarkLate = async function(id) {
+    const s = students[id];
+    await update(ref(db,`students/${id}`), {lateCount: (s.lateCount||0)+1});
+    await addHistory(id,'late','手動記錄');
+    showToast(`${s.name} +遲到 $${FEE}`);
+  };
+  window.adminMarkAbsent = async function(id) {
+    const s = students[id];
+    await update(ref(db,`students/${id}`), {absentCount: (s.absentCount||0)+1});
+    await addHistory(id,'absent');
+    showToast(`${s.name} 記錄缺席`);
+  };
+  window.adminMarkPaid = async function(id) {
+    const s = students[id];
+    if ((s.paidCount||0) < s.lateCount) {
+      await update(ref(db,`students/${id}`), {paidCount: (s.paidCount||0)+1});
+      await addHistory(id,'paid');
+      showToast(`${s.name} 收款 $${FEE} ✓`);
+    }
+  };
+  window.adminUndoLate = async function(id) {
+    const s = students[id];
+    if (s.lateCount > 0) {
+      await update(ref(db,`students/${id}`), {lateCount: Math.max(s.paidCount||0, s.lateCount-1)});
+      showToast(`${s.name} 撤銷遲到`);
+    }
+  };
+
+  // ── 出席點名 ──
+  let attendTemp = {};
+  window.renderAttendGrid = function() {
+    const today = new Date();
+    if (!document.getElementById('attend-date').value)
+      document.getElementById('attend-date').value = today.toISOString().slice(0,10);
+    if (!document.getElementById('attend-time').value)
+      document.getElementById('attend-time').value = today.toTimeString().slice(0,5);
+    document.getElementById('att-grid').innerHTML = Object.entries(students).map(([id,s])=>{
+      const st = attendTemp[id]||'';
+      const cls = st==='present'?'present-bg':st==='late'?'late-bg':st==='absent'?'absent-bg':'';
+      const icon = st==='present'?'✅':st==='late'?'⏰':st==='absent'?'❌':'○';
+      return `<div class="att-cell ${cls}" onclick="cycleAttend('${id}')">
+        <div class="att-name">${s.name}</div>
+        <div class="att-status">${icon}</div>
+      </div>`;
+    }).join('');
+  };
+  window.cycleAttend = function(id) {
+    const states=['','present','late','absent'];
+    attendTemp[id] = states[(states.indexOf(attendTemp[id]||'')+1)%states.length];
+    window.renderAttendGrid();
+  };
+  window.saveAttendance = async function() {
+    const date = document.getElementById('attend-date').value;
+    const time = document.getElementById('attend-time').value;
+    const session = document.getElementById('attend-session').value||'排練';
+    if (!date||!Object.keys(attendTemp).length) { showToast('請先選日期並記錄狀態'); return; }
+    for (const [id, status] of Object.entries(attendTemp)) {
+      const s = students[id]; if(!s||!status) continue;
+      const updates = {};
+      if (status==='present') updates.presentCount=(s.presentCount||0)+1;
+      else if (status==='late') { updates.lateCount=(s.lateCount||0)+1; updates.presentCount=(s.presentCount||0)+1; }
+      else if (status==='absent') updates.absentCount=(s.absentCount||0)+1;
+      if (Object.keys(updates).length) await update(ref(db,`students/${id}`), updates);
+      await addHistory(id, status, `${date} ${session}`);
+    }
+    attendTemp={};
+    window.renderAttendGrid();
+    showToast(`✓ 儲存「${session}」出席記錄`);
+  };
+
+  // ── 報表 ──
+  window.renderReport = function() {
+    const vals = Object.values(students);
+    document.getElementById('r-students').textContent = vals.length+' 人';
+    document.getElementById('r-lates').textContent   = vals.reduce((a,s)=>a+s.lateCount,0)+' 次';
+    document.getElementById('r-absents').textContent = vals.reduce((a,s)=>a+(s.absentCount||0),0)+' 次';
+    const total = vals.reduce((a,s)=>a+s.lateCount*FEE,0);
+    const coll  = vals.reduce((a,s)=>a+(s.paidCount||0)*FEE,0);
+    document.getElementById('r-total').textContent     = '$'+total;
+    document.getElementById('r-collected').textContent = '$'+coll;
+    document.getElementById('r-owed').textContent      = '$'+(total-coll);
+    const ranked = [...vals].filter(s=>s.lateCount>0).sort((a,b)=>b.lateCount-a.lateCount).slice(0,10);
+    document.getElementById('r-rank').innerHTML = ranked.length ? ranked.map((s,i)=>`
+      <div class="report-row">
+        <span>${['🥇','🥈','🥉'][i]||(i+1+'.')} ${s.name}</span>
+        <div style="text-align:right">
+          <div class="rval" style="color:var(--accent)">${s.lateCount}次</div>
+          <div style="font-size:11px;color:var(--muted)">欠$${Math.max(0,s.lateCount-s.paidCount)*FEE}</div>
+        </div>
+      </div>`).join('') : '<div style="color:var(--muted);text-align:center;padding:10px">🎉 無遲到</div>';
+  };
+  window.exportCSV = function() {
+    const header = '姓名,遲到次數,缺席次數,出席次數,已繳次數,欠費金額';
+    const rows = Object.values(students).map(s=>[s.name,s.lateCount,s.absentCount||0,s.presentCount||0,s.paidCount||0,Math.max(0,s.lateCount-s.paidCount)*FEE].join(','));
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\uFEFF'+[header,...rows].join('\n')],{type:'text/csv;charset=utf-8'}));
+    a.download='罰款報表.csv'; a.click();
+    showToast('已匯出CSV');
+  };
+
+  // ── 密碼修改 ──
+  window.changePwd = function() {
+    const old=document.getElementById('old-pwd').value, nw=document.getElementById('new-pwd').value, cf=document.getElementById('cfm-pwd').value;
+    if (old!==(localStorage.getItem('gp_pin')||'1234')) { showToast('舊密碼錯誤'); return; }
+    if (!/^\d{4}$/.test(nw)) { showToast('密碼需為4位數字'); return; }
+    if (nw!==cf) { showToast('確認密碼不符'); return; }
+    localStorage.setItem('gp_pin',nw);
+    document.getElementById('old-pwd').value=document.getElementById('new-pwd').value=document.getElementById('cfm-pwd').value='';
+    showToast('密碼已更新 ✓');
+  };
+
+  // ── 頁籤 ──
+  window.showAdminPage = function(name, el) {
+    document.querySelectorAll('.admin-page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab,.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById('apage-'+name).classList.add('active');
+    document.querySelectorAll(`[onclick*="showAdminPage('${name}'"]`).forEach(e=>e.classList.add('active'));
+    if (name==='report') window.renderReport();
+    if (name==='attend') window.renderAttendGrid();
+    if (name==='list') window.renderAdminList();
+  };
+
+  // ── 深/淺色 ──
+  let isDark=true;
+  window.toggleTheme=function(){
+    isDark=!isDark; document.body.classList.toggle('light',!isDark);
+    document.getElementById('theme-btn').textContent=isDark?'🌙':'☀️';
+    localStorage.setItem('gp_theme',isDark?'dark':'light');
+  };
+  if (localStorage.getItem('gp_theme')==='light') {
+    isDark=false; document.body.classList.add('light');
+  }
+
+  // ── Init ──
+  initStudents();
+</script>
+
+<style>
+:root{--bg:#0f0f0f;--surface:#1c1c1e;--surface2:#2c2c2e;--surface3:#3a3a3c;--accent:#ff6b35;--accent2:#ffd166;--green:#30d158;--red:#ff453a;--blue:#0a84ff;--text:#f5f5f7;--text2:#ebebf5cc;--muted:#8e8e93;--border:#38383a;--card-bg:#1c1c1e}
+.light{--bg:#f2f2f7;--surface:#fff;--surface2:#f2f2f7;--surface3:#e5e5ea;--text:#1c1c1e;--text2:#3c3c43cc;--muted:#8e8e93;--border:#c6c6c8;--card-bg:#fff}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;transition:background .3s,color .3s}
+
+/* ── LOCK ── */
+#lock-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px}
+.lock-icon{font-size:52px;margin-bottom:12px}
+.lock-title{font-size:20px;font-weight:900;margin-bottom:6px}
+.lock-sub{font-size:13px;color:var(--muted);margin-bottom:8px}
+.student-btn{margin-top:12px;padding:10px 28px;background:var(--surface2);border:1px solid var(--blue);border-radius:20px;color:var(--blue);font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
+.pin-dots{display:flex;gap:16px;margin:24px 0 8px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);transition:all .2s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent)}
+.lock-error{color:var(--red);font-size:13px;margin:8px 0;min-height:18px}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:230px;margin-top:8px}
+.num-btn{height:62px;border-radius:16px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:22px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .1s,opacity .1s}
+.num-btn:active{transform:scale(.93);opacity:.7}
+.num-btn .sub{font-size:9px;color:var(--muted);font-weight:400;letter-spacing:1px}
+.num-btn.del{font-size:18px;background:var(--surface2)}
+.num-btn.empty{background:transparent;border:none;cursor:default}
+.lock-hint{font-size:12px;color:var(--muted);margin-top:14px}
+
+/* ── STUDENT SCREEN ── */
+#student-screen{display:none;padding:20px 16px 40px;min-height:100vh}
+.student-screen-title{font-size:20px;font-weight:900;margin-bottom:4px}
+.student-screen-title span{color:var(--accent)}
+.student-screen-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.lookup-row{display:flex;gap:8px;margin-bottom:16px}
+.lookup-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:15px;font-family:'Noto Sans TC',sans-serif;outline:none}
+.lookup-input:focus{border-color:var(--accent)}
+.lookup-btn{padding:12px 18px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
+.back-btn{margin-top:20px;padding:10px 24px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
+
+/* ── ADMIN APP ── */
+#admin-app{display:none;padding-bottom:80px}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.header-title{font-size:17px;font-weight:900}
+.header-title span{color:var(--accent)}
+.header-actions{display:flex;gap:8px}
+.icon-btn{width:34px;height:34px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.header-stats{display:flex;gap:8px}
+.stat-chip{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:6px 8px;text-align:center}
+.stat-chip .val{font-size:16px;font-weight:900;font-family:'Space Mono',monospace;color:var(--accent2)}
+.stat-chip .lbl{font-size:10px;color:var(--muted)}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{flex:1;min-width:60px;padding:11px 4px;text-align:center;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.admin-page{display:none;padding:14px}
+.admin-page.active{display:block}
+.search-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'Noto Sans TC',sans-serif;outline:none;width:100%;margin-bottom:10px}
+.search-bar:focus{border-color:var(--accent)}
+.filter-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.filter-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.filter-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.student-card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:13px 13px 11px;margin-bottom:9px;position:relative;overflow:hidden}
+.card-stripe{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.card-stripe.green{background:var(--green)}
+.card-stripe.gray{background:var(--border)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px}
+.student-name{font-size:16px;font-weight:700}
+.student-num{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace}
+.fee-badge{border-radius:8px;padding:4px 10px;font-family:'Space Mono',monospace;font-weight:700;font-size:14px;white-space:nowrap}
+.fee-badge.owed{background:var(--accent);color:#fff}
+.fee-badge.paid{background:var(--green);color:#000}
+.fee-badge.zero{background:var(--surface2);color:var(--muted)}
+.card-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.pill{background:var(--surface2);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--muted)}
+.pill span{color:var(--text);font-weight:700}
+.card-actions{display:flex;gap:5px;flex-wrap:wrap}
+.btn{border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:transform .1s;padding:8px 10px}
+.btn:active{transform:scale(.95)}
+.btn-late{background:var(--accent);color:#fff;flex:1}
+.btn-absent{background:var(--red);color:#fff;flex:1}
+.btn-paid{background:#1c4f2a;color:var(--green);border:1px solid var(--green);flex:1}
+.btn-sm{background:var(--surface2);color:var(--muted);border:1px solid var(--border);padding:8px 10px}
+.att-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.att-cell{border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;border:1px solid var(--border)}
+.att-cell .att-name{font-size:11px;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att-cell .att-status{font-size:16px}
+.att-cell.present-bg{background:#0d2e18;border-color:var(--green)}
+.att-cell.late-bg{background:#2e1a0d;border-color:var(--accent)}
+.att-cell.absent-bg{background:#2e0d0d;border-color:var(--red)}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px}
+.form-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+.form-row{display:flex;gap:8px;margin-bottom:8px}
+.form-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);font-size:14px;font-family:'Noto Sans TC',sans-serif;outline:none}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--muted)}
+.btn-submit{width:100%;padding:12px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-top:4px}
+.report-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+.report-title{font-size:12px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.report-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.report-row:last-child{border-bottom:none}
+.rval{font-family:'Space Mono',monospace;font-weight:700;font-size:14px}
+.export-btn{width:100%;padding:14px;background:var(--surface2);border:2px solid var(--accent2);border-radius:12px;color:var(--accent2);font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-bottom:8px}
+.history-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.history-item:last-child{border-bottom:none}
+.tag{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.tag.late{background:var(--accent);color:#fff}
+.tag.absent{background:var(--red);color:#fff}
+.tag.present{background:var(--green);color:#000}
+.tag.paid{background:#1c4f2a;color:var(--green)}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+.nav-item{flex:1;padding:10px 4px 6px;text-align:center;cursor:pointer;font-size:10px;color:var(--muted);transition:color .2s}
+.nav-item .icon{font-size:22px;display:block;margin-bottom:2px}
+.nav-item.active{color:var(--accent)}
+.section-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:6px 0 10px;font-family:'Space Mono',monospace}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 20px;font-size:13px;font-weight:600;opacity:0;transition:all .25s;z-index:9999;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ 鎖定畫面 ══════════════ -->
+<div id="lock-screen">
+  <div class="lock-icon">🎭</div>
+  <div class="lock-title">畢業公演出席系統</div>
+  <div class="lock-sub">財務請輸入密碼</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="lock-error" id="lock-error"></div>
+  <div class="numpad">
+    <div class="num-btn" onclick="pinInput(1)">1</div>
+    <div class="num-btn" onclick="pinInput(2)">2<span class="sub">ABC</span></div>
+    <div class="num-btn" onclick="pinInput(3)">3<span class="sub">DEF</span></div>
+    <div class="num-btn" onclick="pinInput(4)">4<span class="sub">GHI</span></div>
+    <div class="num-btn" onclick="pinInput(5)">5<span class="sub">JKL</span></div>
+    <div class="num-btn" onclick="pinInput(6)">6<span class="sub">MNO</span></div>
+    <div class="num-btn" onclick="pinInput(7)">7<span class="sub">PQRS</span></div>
+    <div class="num-btn" onclick="pinInput(8)">8<span class="sub">TUV</span></div>
+    <div class="num-btn" onclick="pinInput(9)">9<span class="sub">WXYZ</span></div>
+    <div class="num-btn empty"></div>
+    <div class="num-btn" onclick="pinInput(0)">0</div>
+    <div class="num-btn del" onclick="pinDel()">⌫</div>
+  </div>
+  <button class="student-btn" onclick="goStudent()">👤 我是學生，查詢我的記錄</button>
+  <div class="lock-hint">預設密碼：1234</div>
+</div>
+
+<!-- ══════════════ 學生查詢畫面 ══════════════ -->
+<div id="student-screen">
+  <div class="student-screen-title">畢業公演<span>出席查詢</span></div>
+  <div class="student-screen-sub">輸入你的姓名查看個人記錄</div>
+  <div class="lookup-row">
+    <input class="lookup-input" id="student-name-input" placeholder="輸入姓名，例：王小明" onkeydown="if(event.key==='Enter')studentLookup()">
+    <button class="lookup-btn" onclick="studentLookup()">查詢</button>
+  </div>
+  <div id="student-result"></div>
+  <button class="back-btn" onclick="goLock()">← 返回</button>
+</div>
+
+<!-- ══════════════ 管理員介面 ══════════════ -->
+<div id="admin-app">
+  <div class="header">
+    <div class="header-top">
+      <div class="header-title">公演<span>管理</span></div>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+        <button class="icon-btn" onclick="lockApp()">🔒</button>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-chip"><div class="val" id="h-total">$0</div><div class="lbl">待收罰款</div></div>
+      <div class="stat-chip"><div class="val" id="h-late">0</div><div class="lbl">遲到次</div></div>
+      <div class="stat-chip"><div class="val" id="h-absent">0</div><div class="lbl">缺席次</div></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showAdminPage('list',this)">👥名單</div>
+    <div class="tab" onclick="showAdminPage('attend',this)">✅出席</div>
+    <div class="tab" onclick="showAdminPage('report',this)">📊報表</div>
+    <div class="tab" onclick="showAdminPage('settings',this)">⚙️設定</div>
+  </div>
+
+  <!-- 名單 -->
+  <div id="apage-list" class="admin-page active">
+    <input class="search-bar" id="admin-search" placeholder="🔍 搜尋姓名..." oninput="renderAdminList()">
+    <div class="filter-row">
+      <div class="filter-chip active" onclick="setAdminFilter('all',this)">全部</div>
+      <div class="filter-chip" onclick="setAdminFilter('owed',this)">有遲到</div>
+      <div class="filter-chip" onclick="setAdminFilter('unpaid',this)">未繳費</div>
+      <div class="filter-chip" onclick="setAdminFilter('cleared',this)">已繳清</div>
+    </div>
+    <div id="admin-list"></div>
+  </div>
+
+  <!-- 出席點名 -->
+  <div id="apage-attend" class="admin-page">
+    <div class="form-card" style="margin-bottom:12px">
+      <div class="form-title">📅 排練資訊</div>
+      <div class="form-row">
+        <input type="date" class="form-input" id="attend-date">
+        <input type="time" class="form-input" id="attend-time" style="flex:.6">
+      </div>
+      <input class="form-input" id="attend-session" placeholder="排練項目（例：走位排練）">
+    </div>
+    <div class="section-label">點擊切換狀態 ○→✅→⏰→❌</div>
+    <div class="att-grid" id="att-grid"></div>
+    <button class="btn-submit" style="margin-top:14px" onclick="saveAttendance()">💾 儲存出席記錄</button>
+  </div>
+
+  <!-- 報表 -->
+  <div id="apage-report" class="admin-page">
+    <div class="report-section">
+      <div class="report-title">📊 總覽</div>
+      <div class="report-row"><span>學生人數</span><span class="rval" id="r-students">-</span></div>
+      <div class="report-row"><span>遲到總次數</span><span class="rval" style="color:var(--accent)" id="r-lates">-</span></div>
+      <div class="report-row"><span>缺席總次數</span><span class="rval" style="color:var(--red)" id="r-absents">-</span></div>
+      <div class="report-row"><span>應收罰款</span><span class="rval" style="color:var(--accent)" id="r-total">-</span></div>
+      <div class="report-row"><span>已收金額</span><span class="rval" style="color:var(--green)" id="r-collected">-</span></div>
+      <div class="report-row"><span>未收金額</span><span class="rval" style="color:var(--red)" id="r-owed">-</span></div>
+    </div>
+    <div class="report-section">
+      <div class="report-title">🏆 遲到排行</div>
+      <div id="r-rank"></div>
+    </div>
+    <button class="export-btn" onclick="exportCSV()">📤 匯出CSV報表</button>
+  </div>
+
+  <!-- 設定 -->
+  <div id="apage-settings" class="admin-page">
+    <div class="form-card">
+      <div class="form-title">🔑 修改密碼</div>
+      <div class="form-row"><input class="form-input" type="password" placeholder="舊密碼" id="old-pwd" maxlength="4"></div>
+      <div class="form-row">
+        <input class="form-input" type="password" placeholder="新密碼（4位）" id="new-pwd" maxlength="4">
+        <input class="form-input" type="password" placeholder="確認" id="cfm-pwd" maxlength="4">
+      </div>
+      <button class="btn-submit" onclick="changePwd()">更新密碼</button>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="showAdminPage('list',this)"><span class="icon">👥</span>名單</div>
+    <div class="nav-item" onclick="showAdminPage('attend',this)"><span class="icon">✅</span>出席</div>
+    <div class="nav-item" onclick="showAdminPage('report',this)"><span class="icon">📊</span>報表</div>
+    <div class="nav-item" onclick="showAdminPage('settings',this)"><span class="icon">⚙️</span>設定</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function show(id){document.getElementById(id).style.display='block'}
+function hide(id){document.getElementById(id).style.display='none'}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function goStudent(){hide('lock-screen');show('student-screen')}
+function goLock(){hide('student-screen');show('lock-screen');document.getElementById('student-result').innerHTML='';document.getElementById('student-name-input').value=''}
+</script>
+</body>
+</html>
