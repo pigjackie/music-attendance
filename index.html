@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>畢業公演出席系統 PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
@@ -13,7 +13,6 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set, get, update, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  // ✅ 已填入您提供的 API Key 與專案資訊
   const firebaseConfig = {
     apiKey:            "AIzaSyC_6aza1KH8GXxUbYBraK7wcqPrSUSF-Ns",
     authDomain:        "jjvsmusic.firebaseapp.com",
@@ -30,7 +29,7 @@
   const DEFAULT_NAMES = [
     '毛語程','林叡成','田宇紘','吳昆達','吳宥良','黃崇恩','林宏澤','金品澔',
     '劉宸昀','蔡呈樂','蘇瑞吾','梁之凡','蔡宗佑','黃穩達','馮康維','倪秉澤',
-    '廖敏君','劉慶霈','蔡慧琳','鄭淳融','魏宜宸','專婉瑜','安兪臻','江岑君',
+    '廖敏君','劉慶霈','蔡慧琳','鄭淳融','魏宜宸','徐婉瑜','安兪臻','江岑君',
     '池宛昕','李曉萍','周玄禮','王以昕','林祐立','邱詩涵','胡云珊','蔡逸宣',
     '高慧君','張路淇','陳芃瑾','陳雨彤','陳宥安','陳圓卿','傅克諳','曾妘湘'
   ];
@@ -39,7 +38,6 @@
   let students = {};
   let isAdmin = false;
 
-  // ── 通用輔助函數 ──
   window.show = (id) => { const el = document.getElementById(id); if(el) el.style.display='block'; };
   window.hide = (id) => { const el = document.getElementById(id); if(el) el.style.display='none'; };
   window.showToast = (msg) => { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
@@ -63,12 +61,12 @@
       students = snap.val() || {};
       Object.values(students).forEach(s => { s.history = s.history ? Object.values(s.history) : []; });
       if (isAdmin) renderAdminList();
-      updateAdminHeader();
+      renderReport();
     });
   }
 
   window.goStudent = () => { hide('lock-screen'); show('student-screen'); };
-  window.goLock = () => { hide('student-screen'); show('lock-screen'); };
+  window.goLock = () => { hide('student-screen'); hide('admin-app'); show('lock-screen'); };
   
   window.studentLookup = function() {
     const query = document.getElementById('student-name-input').value.trim();
@@ -85,44 +83,48 @@
         ${owed === 0 ? '<div class="model-badge">準時模範生 ✅</div>' : `<div class="fee-badge owed">待繳 $${owed}</div>`}</div>
         <div class="card-pills"><div class="pill">遲到 <span>${s.lateCount}</span></div><div class="pill">出席 <span>${s.presentCount}</span></div><div class="pill">請假 <span>${s.leaveCount||0}</span></div></div>
       </div>
-      <div class="section-label">記錄</div>
-      ${hist.slice(0,5).map(h=>`<div class="history-item"><span>${h.type==='late'?'⏰ 遲到':h.type==='paid'?'💰 繳費':h.type==='leave'?'🍃 請假':h.type==='absent'?'❌ 缺席':'✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}`;
-  };
-
-  window.copyOwedList = function() {
-    let text = "【畢業公演催繳單】\n";
-    Object.values(students).forEach(s => { const owed = Math.max(0, s.lateCount - s.paidCount) * FEE; if (owed > 0) text += `📌 ${s.name}：$${owed}\n`; });
-    navigator.clipboard.writeText(text).then(() => showToast("已複製名單"));
+      <div class="section-label">最近記錄</div>
+      ${hist.slice(0,5).map(h=>`<div class="history-item"><span>${h.type==='late'?'⏰ 遲到':h.type==='paid'?'💰 繳費':h.type==='leave'?'🍃 請假':'✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}`;
   };
 
   let pinBuffer = '';
   window.pinInput = (n) => { if(pinBuffer.length<4) pinBuffer+=n; updateDots(); if(pinBuffer.length===4) setTimeout(checkPin,200); };
   window.pinDel = () => { pinBuffer=pinBuffer.slice(0,-1); updateDots(); };
   function updateDots() { for(let i=0;i<4;i++) document.getElementById('d'+i).className='pin-dot'+(i<pinBuffer.length?' filled':''); }
+  
   function checkPin() {
     const stored = localStorage.getItem('gp_pin') || '1234';
-    if(pinBuffer===stored) { isAdmin=true; show('admin-app'); hide('lock-screen'); showTab('list'); }
-    else { showToast('密碼錯誤'); pinBuffer=''; updateDots(); }
+    if(pinBuffer === stored) {
+      isAdmin = true;
+      hide('lock-screen');
+      show('admin-app');
+      showTab('list');
+      pinBuffer = ''; updateDots();
+    } else {
+      showToast('密碼錯誤');
+      pinBuffer = ''; updateDots();
+    }
   }
-  window.lockApp = () => { isAdmin=false; show('lock-screen'); hide('admin-app'); pinBuffer=''; updateDots(); };
 
   window.showTab = (name) => {
-    ['list','attend','report'].forEach(t => hide('apage-'+t));
+    ['list','attend', 'report'].forEach(t => hide('apage-'+t));
     show('apage-'+name);
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    const activeItem = document.querySelector(`.nav-item[onclick*="${name}"]`);
-    if(activeItem) activeItem.classList.add('active');
+    const targetNav = document.getElementById('nav-'+name);
+    if(targetNav) targetNav.classList.add('active');
     if(name==='report') renderReport();
     if(name==='attend') renderAttendGrid();
+    if(name==='list') renderAdminList();
   };
 
   window.renderAdminList = function() {
     const container = document.getElementById('admin-list');
+    if(!container) return;
     container.innerHTML = Object.entries(students).map(([id,s])=>{
       const owed = Math.max(0, s.lateCount - s.paidCount) * FEE;
       return `<div class="student-card"><div class="card-top"><div><div class="student-name">${s.name}</div><div class="student-num">${id}</div></div>
-      <div class="fee-badge ${owed>0?'':'model-badge'}">${owed>0?'$'+owed:'已清'}</div></div>
-      <div style="display:flex;gap:10px"><button onclick="quickAction('${id}','paid')" style="flex:1;background:var(--green);border:none;padding:10px;border-radius:10px;font-weight:bold">收錢</button>
+      <div class="fee-badge ${owed>0?'':'model-badge'}">${owed>0?'$'+owed:'已繳清'}</div></div>
+      <div style="display:flex;gap:10px"><button onclick="quickAction('${id}','paid')" style="flex:1;background:var(--green);border:none;padding:10px;border-radius:10px;font-weight:bold;color:#000">收錢</button>
       <button onclick="quickAction('${id}','late')" style="flex:1;background:var(--accent);border:none;padding:10px;border-radius:10px;color:#fff;font-weight:bold">+遲到</button></div></div>`;
     }).join('');
   };
@@ -135,7 +137,9 @@
 
   let attendTemp = {};
   window.renderAttendGrid = function() {
-    document.getElementById('att-grid').innerHTML = Object.entries(students).map(([id,s])=>{
+    const grid = document.getElementById('att-grid');
+    if(!grid) return;
+    grid.innerHTML = Object.entries(students).map(([id,s])=>{
       const st = attendTemp[id]||'';
       const cls = st==='present'?'present-bg':st==='late'?'late-bg':st==='absent'?'absent-bg':st==='leave'?'leave-bg':'';
       const icon = st==='present'?'✅':st==='late'?'⏰':st==='absent'?'❌':st==='leave'?'🍃':'○';
@@ -159,7 +163,13 @@
     attendTemp = {}; showToast("紀錄已儲存"); showTab('list');
   };
 
-  window.renderReport = () => { const total = Object.values(students).reduce((a,s)=> a + Math.max(0, s.lateCount - s.paidCount)*FEE, 0); document.getElementById('r-total').textContent = '$' + total; };
+  window.renderReport = () => { 
+    const rTotal = document.getElementById('r-total');
+    if(rTotal) {
+      const total = Object.values(students).reduce((a,s)=> a + Math.max(0, s.lateCount - s.paidCount)*FEE, 0);
+      rTotal.textContent = '$' + total;
+    }
+  };
 
   initStudents();
 </script>
@@ -193,7 +203,7 @@ body{background:var(--bg);color:var(--text);overflow-x:hidden}
 .att-cell.leave-bg{border-color:var(--blue);background:rgba(10,132,255,0.1)}
 .btn-primary{background:var(--accent);color:#fff;border:none;padding:14px;border-radius:14px;width:100%;font-weight:bold;font-size:16px;margin-top:10px}
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);display:flex;padding:10px 0 25px;border-top:1px solid var(--border);z-index:900}
-.nav-item{flex:1;text-align:center;font-size:10px;color:var(--muted)}
+.nav-item{flex:1;text-align:center;font-size:10px;color:var(--muted);cursor:pointer}
 .nav-item.active{color:var(--accent)}
 .icon{font-size:24px;display:block}
 .section-label{font-size:11px;color:var(--muted);letter-spacing:2px;margin:20px 0 10px;text-transform:uppercase}
@@ -217,10 +227,10 @@ input{background:var(--surface);border:1px solid var(--border);color:#fff;paddin
 <div id="student-screen" class="safe-area" style="display:none"><h1>出席查詢</h1><div style="display:flex;gap:10px;margin:20px 0"><input type="text" id="student-name-input" placeholder="請輸入姓名"><button onclick="studentLookup()" style="background:var(--accent);border:none;padding:0 20px;border-radius:10px;color:#fff;font-weight:bold">查詢</button></div><div id="student-result"></div><button onclick="goLock()" style="margin-top:40px;color:var(--muted);background:none;border:none;width:100%">← 返回管理登入</button></div>
 
 <div id="admin-app" style="display:none">
-<div class="safe-area" id="apage-list"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2>學生名冊</h2><button onclick="lockApp()" style="background:none;border:none;font-size:20px">🔒</button></div><div id="admin-list"></div></div>
+<div class="safe-area" id="apage-list"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2>學生名冊</h2><button onclick="goLock()" style="background:none;border:none;font-size:20px">🔒</button></div><div id="admin-list"></div></div>
 <div class="safe-area" id="apage-attend" style="display:none"><h2>即時點名</h2><p style="color:var(--muted);font-size:12px;margin:10px 0">點擊：○→✅(出)→⏰(遲)→❌(缺)→🍃(假)</p><div class="att-grid" id="att-grid"></div><button class="btn-primary" onclick="saveAttendance()">💾 儲存並入帳</button></div>
 <div class="safe-area" id="apage-report" style="display:none"><h2>數據報表</h2><div class="student-card" style="border-left:5px solid var(--blue);margin-top:15px"><div id="r-total" style="font-size:24px;font-weight:bold;color:var(--accent)">$0</div><div style="font-size:12px;color:var(--muted)">總待收罰款</div></div><button class="btn-primary" onclick="copyOwedList()" style="background:var(--blue)">📋 複製催繳名單 (Line)</button></div>
-<nav class="bottom-nav"><div class="nav-item active" onclick="showTab('list')"><span class="icon">👥</span>名單</div><div class="nav-item" onclick="showTab('attend')"><span class="icon">📅</span>點名</div><div class="nav-item" onclick="showTab('report')"><span class="icon">📊</span>報表</div></nav>
+<nav class="bottom-nav"><div id="nav-list" class="nav-item" onclick="showTab('list')"><span class="icon">👥</span>名單</div><div id="nav-attend" class="nav-item" onclick="showTab('attend')"><span class="icon">📅</span>點名</div><div id="nav-report" class="nav-item" onclick="showTab('report')"><span class="icon">📊</span>報表</div></nav>
 </div>
 <div class="toast" id="toast"></div>
 </body>
