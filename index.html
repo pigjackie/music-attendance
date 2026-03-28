@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>112年莊敬音演三莊畢業公演管理系統 V2.1</title>
+<title>112年莊敬音演三莊畢業公演管理系統 V2.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -16,7 +16,7 @@
   
   .app-container { flex: 1; width: 100%; padding: 30px 20px; display: flex; flex-direction: column; }
   .header { text-align: center; margin: 40px 0 30px; }
-  .main-title { font-size: 32px; font-weight: 900; background: linear-gradient(to bottom, var(--gold-light), var(--gold-main)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 5px 15px rgba(212, 175, 55, 0.3); }
+  .main-title { font-size: 30px; font-weight: 900; background: linear-gradient(to bottom, var(--gold-light), var(--gold-main)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 5px 15px rgba(212, 175, 55, 0.3); line-height: 1.3; }
 
   .main-card { background: var(--glass); border-radius: 25px; padding: 25px; border: 1px solid rgba(212, 175, 55, 0.2); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); margin-bottom: 25px; }
   .btn-gold { width: 100%; padding: 18px; border-radius: 15px; background: linear-gradient(135deg, var(--gold-light), var(--gold-main)); color: #000; font-weight: 900; font-size: 18px; border: none; cursor: pointer; }
@@ -24,8 +24,7 @@
   .admin-panel { display: none; padding-bottom: 160px; }
   .list-item { background: rgba(255,255,255,0.05); padding: 18px; border-radius: 20px; margin-bottom: 15px; border-left: 5px solid var(--gold-main); }
   
-  /* 分隔線樣式 */
-  .list-divider { text-align: center; color: var(--gold-main); font-weight: bold; font-size: 14px; margin: 30px 0 15px; border-bottom: 1px dashed var(--gold-main); padding-bottom: 5px; opacity: 0.8; }
+  .list-divider { text-align: center; color: var(--gold-main); font-weight: bold; font-size: 14px; margin: 30px 0 15px; border-bottom: 1px dashed var(--gold-main); padding-bottom: 5px; letter-spacing: 2px; }
 
   .quota-box-container { display: flex; gap: 10px; margin-top: 12px; align-items: center; }
   .quota-box { width: 40px; height: 40px; border: 2px solid var(--gold-main); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
@@ -47,23 +46,26 @@
 <body>
 
   <div class="app-container" id="view-student">
-    <div class="header"><div class="main-title">112年莊敬音演三莊<br>畢業公演</div></div>
+    <div class="header"><div class="main-title">112年莊敬音演三莊<br>畢業公演管理系統</div></div>
     
     <div id="student-login" class="main-card">
-        <span class="section-label">音演三莊個人帳目查詢</span>
+        <span class="section-label">音演三莊個人查詢系統</span>
+        
         <div id="step-name">
             <input type="text" id="stu-name" placeholder="請輸入姓名">
-            <button class="btn-gold" onclick="searchStudent()">登入查詢</button>
-            <p class="help-text">首次登入請設定專屬密碼，密碼忘記請洽蕭老師。</p>
+            <button class="btn-gold" onclick="searchStudent()">登入查詢紀錄</button>
+            <p class="help-text">首次登入請設定您的 4 位數查詢密碼。</p>
         </div>
+
         <div id="step-first-set" style="display:none">
-            <p style="color:var(--gold-light); text-align:center; margin-bottom:15px; font-weight:bold;">✨ 首次登入設定<br>請設定 4 位數查詢密碼</p>
+            <p style="color:var(--gold-light); text-align:center; margin-bottom:15px; font-weight:bold;">✨ 首次登入設定<br>請設定 4 位數專屬密碼</p>
             <input type="password" id="first-pwd" placeholder="請輸入 4 位純數字" inputmode="numeric" maxlength="4">
-            <button class="btn-gold" onclick="setPassword()">完成設定並進入</button>
+            <button class="btn-gold" onclick="setPassword()">完成設定並進入系統</button>
         </div>
+
         <div id="step-auth" style="display:none">
             <p id="auth-welcome" style="color:var(--gold-light); text-align:center; margin-bottom:15px; font-weight:bold;"></p>
-            <input type="password" id="auth-pwd" placeholder="輸入查詢密碼" inputmode="numeric" maxlength="4">
+            <input type="password" id="auth-pwd" placeholder="請輸入 4 位密碼" inputmode="numeric" maxlength="4">
             <button class="btn-gold" onclick="authStudent()">驗證進入</button>
         </div>
     </div>
@@ -74,22 +76,31 @@
 
   <div class="app-container admin-panel" id="view-admin">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-        <h2 style="font-size:24px; color:var(--gold-main); margin:0;">音演三莊管理端</h2>
-        <button onclick="location.reload()" style="background:none; border:1px solid #555; color:#888; border-radius:10px; padding:5px 12px;">登出</button>
+        <h2 style="font-size:24px; color:var(--gold-main); margin:0;">後台管理系統</h2>
+        <button onclick="location.reload()" style="background:none; border:1px solid #555; color:#888; border-radius:10px; padding:5px 12px;">登出系統</button>
     </div>
+    
     <div id="pane-list"><div id="h-l"></div></div> 
+
     <div id="pane-att" style="display:none">
-        <div style="background:rgba(212,175,55,0.1); padding:10px; border-radius:10px; color:var(--gold-main); font-size:11px; text-align:center; margin-bottom:15px;">點擊姓名切換：✅出席 / ⏰遲到 / 🍃核假 / ❌缺席</div>
+        <div style="background:rgba(212,175,55,0.1); padding:10px; border-radius:10px; color:var(--gold-main); font-size:11px; text-align:center; margin-bottom:15px;">切換點名狀態：✅出席 / ⏰遲到 / 🍃核假 / ❌缺席</div>
         <div id="att-grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;"></div>
-        <button class="btn-gold" style="margin-top:30px" onclick="submitAtt()">💾 儲存點名與備註</button>
+        <button class="btn-gold" style="margin-top:30px" onclick="submitAtt()">💾 儲存今日點名紀錄</button>
     </div>
+
     <div id="pane-rep" style="display:none">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0; color:var(--gold-light);">總欠費清單</h3><div id="total-sum-badge" style="background:var(--accent-red); padding:8px 15px; border-radius:15px; font-weight:bold;">$0</div></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0; color:var(--gold-light);">全班總欠費</h3><div id="total-sum-badge" style="background:var(--accent-red); padding:8px 15px; border-radius:15px; font-weight:bold;">$0</div></div>
         <div class="main-card" style="padding:15px; height: 50vh; overflow-y: auto;"><div id="full-report-list"></div></div>
     </div>
+
     <div id="pane-set" style="display:none">
-        <div class="main-card"><button class="btn-gold" onclick="resetAllAccounting()" style="background:var(--accent-red); color:#fff;">🛑 帳目與密碼全部清空重設</button></div>
+        <div class="main-card">
+            <h3 style="color:var(--gold-main); text-align:center;">帳目全部重設</h3>
+            <p style="font-size:14px; color:#888; margin-bottom:20px; text-align:center;">此動作將清空 55 位同學的所有帳目與密碼，並恢復 2 次機會。名單排序將會被鎖定。</p>
+            <button class="btn-gold" onclick="resetAllAccounting()" style="background:var(--accent-red); color:#fff;">🛑 確定執行大重設</button>
+        </div>
     </div>
+
     <div class="nav-bar">
         <div class="nav-item active" onclick="go('list',this)">👥 名單</div>
         <div class="nav-item" onclick="go('att',this)">📅 點名</div>
@@ -108,7 +119,7 @@
   firebase.initializeApp(_c); const _db = firebase.database();
   let _all = {}, _user = null, _pin = "", _mPin = "0902", _attData = {};
 
-  // 完整名單：1-40 音樂科，41 蕭老師，42-55 演三莊
+  // 精確序號名單
   const MUSIC_STU = ["毛語程","林叡成","田宇紘","吳昆達","吳宥良","黃崇恩","林宏澤","金品澔","劉宸昀","蔡呈樂","蘇瑞吾","梁之凡","蔡宗佑","黃穩達","馮康維","倪秉澤","廖敏君","劉慶霈","蔡慧琳","鄭淳融","魏宜宸","徐婉瑜","安兪臻","江岑君","池宛昕","李曉萍","周玄禮","王以昕","林祐立","邱詩涵","胡云珊","蔡逸宣","高慧君","張路淇","陳芃瑾","陳雨彤","陳宥安","陳圓卿","傅克諳","曾妘湘"];
   const ACTING_STU = ["王玟茜","王語舒","姚宥湘","陳思妤","楊镕慈","王偉家","何建伸","姜榮绅","郭庭傑","陳泊源","陳軍任","黃治容","盧宥辰","謝行知"];
   const ALL_NAMES = [...MUSIC_STU, "蕭旭成", ...ACTING_STU];
@@ -126,7 +137,6 @@
     const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99));
     let html = "";
     sorted.forEach(([id, s]) => {
-      // 在蕭老師之後增加演三莊的分隔線
       if(s.no === 42) html += `<div class="list-divider">—— 演三莊同學名單 ——</div>`;
       const debt = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0);
       html += `<div class="list-item">
@@ -137,7 +147,7 @@
           <span style="margin-left:auto; color:var(--accent-red); font-weight:bold;">$${debt}</span>
         </div>
         <div style="display:flex; gap:8px; margin-top:12px;">
-          <button onclick="setProp('${id}')" style="flex:1; padding:10px; border-radius:10px; background:#222; color:#fff; font-size:11px;">道具費</button>
+          <button onclick="setProp('${id}')" style="flex:1; padding:10px; border-radius:10px; background:#222; color:#fff; font-size:11px; border:1px solid #444;">道具明細</button>
           <button onclick="addFine('${id}', 100, '遲到')" style="flex:1; padding:10px; border-radius:10px; background:var(--accent-red); color:#fff; font-size:11px;">遲到+100</button>
           <button onclick="adminPaid('${id}')" style="flex:1; padding:10px; border-radius:10px; background:var(--gold-main); color:#000; font-weight:bold; font-size:11px;">收現</button>
         </div>
@@ -149,7 +159,7 @@
   function searchStudent() {
       const n = document.getElementById('stu-name').value.trim();
       const f = Object.entries(_all).find(([id, s]) => s.name === n);
-      if(!f) return alert("查無此姓名。");
+      if(!f) return alert("查無此姓名，請確認後再登入。");
       _user = f[0];
       document.getElementById('step-name').style.display = 'none';
       if(!_all[_user].password) document.getElementById('step-first-set').style.display = 'block';
@@ -161,14 +171,14 @@
 
   function setPassword() {
       const p = document.getElementById('first-pwd').value;
-      if(p.length !== 4 || isNaN(p)) return alert("請設定 4 位數字。");
+      if(p.length !== 4 || isNaN(p)) return alert("請設定 4 位數字密碼。");
       _db.ref(`students/${_user}`).update({ password: p });
       alert("密碼設定成功！"); renderUser();
   }
 
   function authStudent() {
       if(_all[_user].password === document.getElementById('auth-pwd').value) renderUser();
-      else alert("密碼錯誤。");
+      else alert("密碼錯誤，請重新輸入。");
   }
 
   function renderUser() {
@@ -182,11 +192,11 @@
         <div style="font-size:56px; font-weight:900; margin:15px 0; color:${debt>0?'var(--accent-red)':'var(--gold-main)'};">$${debt}</div>
         <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
            <div class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">基金：${s.fundPaid?'已繳清':'未繳($1300)'}</div>
-           <div class="status-tag" style="background:#444">機會剩餘：${s.leaveQuota||0} 次</div>
+           <div class="status-tag" style="background:#444">折抵機會：${s.leaveQuota||0} 次</div>
         </div>
-        ${s.propNote ? `<div style="margin-top:15px; font-size:13px; color:#aaa; border-top:1px solid #444; padding-top:10px;">道具明細：${s.propNote}</div>` : ''}
+        ${s.propNote ? `<div style="margin-top:15px; font-size:14px; color:#aaa; border-top:1px solid #444; padding-top:10px;">道具細項說明：<br>${s.propNote}</div>` : ''}
       </div>
-      <div style="margin:20px 0 10px; font-weight:bold; color:var(--gold-light);">收支明細與備註：</div>
+      <div style="margin:20px 0 10px; font-weight:bold; color:var(--gold-light);">收支紀錄與老師備註：</div>
     ` + h.map(i => `<div style="padding:12px 0; border-bottom:1px solid #222; font-size:14px; display:flex; justify-content:space-between;">
         <span>${i.type}${i.note ? ' <br><small style="color:var(--gold-main)">註：'+i.note+'</small>' : ''}</span>
         <span style="text-align:right;">${i.amt?'$'+i.amt:''}<br><small style="color:#444">${i.time}</small></span>
@@ -200,19 +210,19 @@
       else { if(confirm("消耗機會折抵 $100？")) { _db.ref(`students/${id}`).update({ leaveQuota: q - 1, totalFine: Math.max(0, (s.totalFine || 0) - 100) }); _db.ref(`students/${id}/history`).push({ type: "機會折抵", amt: -100, time: new Date().toLocaleDateString() }); } }
   }
 
-  function setProp(id) { const amt = prompt("金額：",_all[id].propFine||0); const note = prompt("明細：",_all[id].propNote||""); if(amt!==null) _db.ref(`students/${id}`).update({ propFine:parseInt(amt), propNote:note }); }
+  function setProp(id) { const amt = prompt("輸入金額：",_all[id].propFine||0); const note = prompt("輸入明細內容：",_all[id].propNote||""); if(amt!==null) _db.ref(`students/${id}`).update({ propFine:parseInt(amt), propNote:note }); }
   function addFine(id, amt, type) { _db.ref(`students/${id}`).update({ totalFine:(_all[id].totalFine||0)+amt }); _db.ref(`students/${id}/history`).push({ type:type, amt:amt, time:new Date().toLocaleDateString() }); }
-  function adminPaid(id) { const amt = prompt("收到金額："); if(amt>0) { _db.ref(`students/${id}`).update({ paidAmt: (_all[id].paidAmt||0)+parseInt(amt) }); _db.ref(`students/${id}/history`).push({ type:"現金繳款", amt:amt, time:new Date().toLocaleDateString() }); } }
+  function adminPaid(id) { const amt = prompt("收到現金額度："); if(amt>0) { _db.ref(`students/${id}`).update({ paidAmt: (_all[id].paidAmt||0)+parseInt(amt) }); _db.ref(`students/${id}/history`).push({ type:"現金繳款", amt:amt, time:new Date().toLocaleDateString() }); } }
   function toggleFund(id, cur) { _db.ref(`students/${id}`).update({ fundPaid: !cur }); }
   function go(p, el) { ['list','att','rep','set'].forEach(i => document.getElementById('pane-'+i).style.display = 'none'); document.getElementById('pane-'+p).style.display = 'block'; document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); if(el) el.classList.add('active'); if(p === 'att') renderAttGrid(); }
   function showLock() { document.getElementById('lock-overlay').style.display='flex'; _pin=""; }
-  function press(v) { if(v==='del') _pin=_pin.slice(0,-1); else if(_pin.length<4) _pin+=v; const ds=document.getElementById('pwd-dots').children; for(let i=0; i<4; i++) ds[i].style.background=i<_pin.length?'var(--gold-main)':'none'; if(_pin.length===4) { if(_pin===_mPin) { document.getElementById('lock-overlay').style.display='none'; document.getElementById('view-student').style.display='none'; document.getElementById('view-admin').style.display='block'; go('list'); } else { alert("錯誤"); _pin=""; } } }
-  function resetAllAccounting() { if(confirm("警告：這將重置 55 位同學的所有帳目與密碼！")) { _db.ref('students').remove().then(() => location.reload()); } }
+  function press(v) { if(v==='del') _pin=_pin.slice(0,-1); else if(_pin.length<4) _pin+=v; const ds=document.getElementById('pwd-dots').children; for(let i=0; i<4; i++) ds[i].style.background=i<_pin.length?'var(--gold-main)':'none'; if(_pin.length===4) { if(_pin===_mPin) { document.getElementById('lock-overlay').style.display='none'; document.getElementById('view-student').style.display='none'; document.getElementById('view-admin').style.display='block'; go('list'); } else { alert("密碼錯誤"); _pin=""; } } }
+  function resetAllAccounting() { if(confirm("警告：這將徹底重置全體 55 位同學的所有數據！")) { _db.ref('students').remove().then(() => location.reload()); } }
   function renderAttGrid() { const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99)); document.getElementById('att-grid').innerHTML = sorted.map(([id, s]) => { _attData[id] = { status: 'present', note: '' }; return `<div id="at-${id}" onclick="tk('${id}')" style="background:rgba(255,255,255,0.05); padding:10px 5px; border-radius:15px; text-align:center; font-size:12px;">${s.name}<br><span id="icon-${id}" style="font-size:24px;">✅</span><br><button onclick="setNote(event, '${id}')" style="font-size:9px; background:#444; color:#fff; border:none; border-radius:5px; margin-top:5px; padding:2px 8px;">註記</button></div>`; }).join(''); }
-  window.setNote = (e, id) => { e.stopPropagation(); const n = prompt("輸入老師註記："); if(n!==null) _attData[id].note = n; }
+  window.setNote = (e, id) => { e.stopPropagation(); const n = prompt("輸入註記內容(如:公假、病假)："); if(n!==null) _attData[id].note = n; }
   window.tk = (id) => { const sMap = { 'present':['late','⏰'], 'late':['leave','🍃'], 'leave':['absent','❌'], 'absent':['present','✅'] }; const cur = _attData[id].status; _attData[id].status = sMap[cur][0]; document.getElementById('icon-'+id).innerText = sMap[cur][1]; }
-  function submitAtt() { const t = new Date().toLocaleDateString(); Object.entries(_attData).forEach(([id, data]) => { if(data.status === 'late') addFine(id, 100, "點名遲到"); if(data.note) _db.ref(`students/${id}/history`).push({ type: "點名備註", note: data.note, time: t }); }); alert("點名完成！"); go('list'); }
-  function renderFullReport() { const listDiv = document.getElementById('full-report-list'); if(!listDiv) return; const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99)); let total = 0; let html = ""; sorted.forEach(([id, s]) => { if(s.no === 42) html += `<div class="list-divider">—— 演三莊同學 ——</div>`; const d = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); total += d; html += `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #222; font-size:14px;"><span>${s.no}. ${s.name} ${s.fundPaid?'':'(欠基金)'}</span><span style="color:${d>0?'var(--accent-red)':'#666'}">$${d}</span></div>`; }); listDiv.innerHTML = html; document.getElementById('total-sum-badge').innerText = '$' + total; }
+  function submitAtt() { const t = new Date().toLocaleDateString(); Object.entries(_attData).forEach(([id, data]) => { if(data.status === 'late') addFine(id, 100, "點名遲到"); if(data.note) _db.ref(`students/${id}/history`).push({ type: "點名備註", note: data.note, time: t }); }); alert("儲存完成！"); go('list'); }
+  function renderFullReport() { const listDiv = document.getElementById('full-report-list'); if(!listDiv) return; const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99)); let total = 0; let html = ""; sorted.forEach(([id, s]) => { if(s.no === 42) html += `<div class="list-divider">—— 演三莊同學名單 ——</div>`; const d = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); total += d; html += `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #222; font-size:14px;"><span>${s.no}. ${s.name} ${s.fundPaid?'':'(未繳基金)'}</span><span style="color:${d>0?'var(--accent-red)':'#666'}">$${d}</span></div>`; }); listDiv.innerHTML = html; document.getElementById('total-sum-badge').innerText = '$' + total; }
 </script>
 </body>
 </html>
