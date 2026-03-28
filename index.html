@@ -3,43 +3,196 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>畢業公演出席系統 PRO v4.0</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<title>112年莊敬高職音樂畢業公演 - 出席罰款管理系統 PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-  :root{--bg:#000;--card:#1c1c1e;--accent:#ff6b35;--green:#30d158;--blue:#0a84ff;--red:#ff453a;--text:#fff}
-  body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC', sans-serif;margin:0;overscroll-behavior:none}
-  .container{padding:20px;max-width:500px;margin:0 auto;padding-bottom:120px}
-  #lock-screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000}
-  .dot-container{display:flex;margin:20px 0}
-  .dot{width:15px;height:15px;border:2px solid #333;border-radius:50%;margin:0 10px}
-  .dot.active{background:var(--accent);border-color:var(--accent)}
-  .numpad{display:grid;grid-template-columns:repeat(3,80px);gap:15px}
-  .btn-n{width:75px;height:75px;border-radius:50%;background:#1c1c1e;color:#fff;border:none;font-size:24px;cursor:pointer}
-  .btn-n:active{background:#3a3a3c}
-  .card{background:var(--card);border-radius:15px;padding:15px;margin-bottom:12px;border:1px solid #2c2c2e}
-  .card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  .badge-debt{background:var(--accent);padding:4px 10px;border-radius:8px;font-size:12px;font-weight:bold}
-  .badge-ok{background:var(--green);color:#000;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:bold}
-  .btn-action{background:var(--green);border:none;padding:12px;border-radius:10px;font-weight:bold;flex:1;cursor:pointer;color:#000;font-size:13px}
-  .btn-primary{background:var(--accent);border:none;padding:15px;border-radius:12px;color:#fff;width:100%;font-weight:bold;font-size:16px;cursor:pointer;margin-bottom:10px}
-  .att-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-  .att-cell{background:#1c1c1e;padding:15px 2px;border-radius:10px;text-align:center;font-size:12px;border:1px solid #2c2c2e}
-  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:500px;background:#1c1c1e;display:flex;padding:20px 0;border-top:1px solid #2c2c2e;z-index:100}
-  .nav-item{flex:1;text-align:center;font-size:12px;color:#8e8e93}
-  .nav-item.active{color:var(--accent)}
-  input{width:100%;padding:15px;border-radius:12px;border:1px solid #333;background:#111;color:#fff;font-size:16px;box-sizing:border-box;margin-bottom:15px}
-  .msg-box{background:rgba(255,107,53,0.15);border:1px dashed var(--accent);padding:10px;border-radius:10px;margin:10px 0;font-size:14px;color:var(--accent)}
-  .hist-item{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #2c2c2e;font-size:14px}
+  /* 2. 音樂科華麗金色主題 CSS */
+  :root {
+    --bg-deep: #1a1a1a; /* 深色底，襯托金色 */
+    --gold-light: #fbeea7;
+    --gold-main: #d4af37; /* 古典金 */
+    --gold-dark: #aa8831;
+    --card-bg: rgba(255, 255, 255, 0.05); /* 毛玻璃卡片底色 */
+    --text-main: #fff;
+    --text-gold: #fbeea7;
+    --accent: #ff6b35; /* 遲到/欠費警示色 */
+    --green: #30d158; /* 繳費/OK色 */
+    --blue: #0a84ff; /* 通知色 */
+  }
+
+  body {
+    background-color: var(--bg-deep);
+    /* 金色漸層背景 */
+    background-image: 
+      linear-gradient(135deg, rgba(170, 136, 49, 0.2) 0%, rgba(26, 26, 26, 1) 50%, rgba(170, 136, 49, 0.1) 100%),
+      /* 音樂符號浮水印 (使用 CSS 繪製) */
+      radial-gradient(circle at 20% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 20%),
+      radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.05) 0%, transparent 20%);
+    background-attachment: fixed;
+    color: var(--text-main);
+    font-family: 'Noto Sans TC', sans-serif;
+    margin: 0;
+    overscroll-behavior: none;
+  }
+
+  /* 音樂符號偽元素 (增加氛圍) */
+  body::before {
+    content: "♪ ♫ ∮";
+    position: fixed;
+    top: 10%;
+    left: 5%;
+    font-size: 15vh;
+    color: rgba(212, 175, 55, 0.03);
+    font-family: serif;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .container { padding: 20px; max-width: 500px; margin: 0 auto; padding-bottom: 120px; }
+
+  /* 藝術字標題 */
+  .main-title {
+    font-family: 'Noto Sans TC', serif;
+    font-weight: 900;
+    color: var(--gold-light);
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(212, 175, 55, 0.3);
+    margin-bottom: 5px;
+    font-size: 20px;
+  }
+  .sub-title {
+    color: var(--gold-main);
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+  }
+
+  /* 鎖屏介面美化 */
+  #lock-screen {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle at center, #2c2c2c 0%, #000 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  #lock-screen::after {
+    content: "𝄞"; /* 大大的高音譜號 */
+    position: absolute; font-size: 40vh; color: rgba(212, 175, 55, 0.02); z-index: -1;
+  }
+
+  .dot-container { display: flex; margin: 25px 0; }
+  .dot { width: 16px; height: 16px; border: 2px solid #555; border-radius: 50%; margin: 0 12px; transition: 0.2s; }
+  .dot.active { background: var(--gold-main); border-color: var(--gold-light); box-shadow: 0 0 10px var(--gold-main); }
+
+  .numpad { display: grid; grid-template-columns: repeat(3, 85px); gap: 18px; }
+  .btn-n {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(255,255,255,0.03); color: var(--gold-light);
+    border: 1px solid rgba(212, 175, 55, 0.15); font-size: 28px; cursor: pointer;
+    transition: 0.2s; font-family: 'Playfair Display', serif;
+  }
+  .btn-n:active { background: rgba(212, 175, 55, 0.1); border-color: var(--gold-main); }
+
+  /* 卡片毛玻璃效果 */
+  .card {
+    background: var(--card-bg);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+  }
+  .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .card-top b { color: var(--gold-light); font-size: 16px; }
+
+  .badge-debt { background: var(--accent); color: #fff; padding: 5px 12px; border-radius: 10px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 5px rgba(255,107,53,0.3); }
+  .badge-ok { background: var(--gold-main); color: #000; padding: 5px 12px; border-radius: 10px; font-size: 13px; font-weight: bold; }
+
+  /* 按鈕美化 */
+  .btn-action {
+    background: linear-gradient(145deg, var(--gold-dark), var(--gold-main));
+    border: none; padding: 12px 5px; border-radius: 12px;
+    font-weight: bold; flex: 1; cursor: pointer;
+    color: #000; font-size: 13px;
+    transition: 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .btn-action:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+
+  .btn-primary {
+    background: linear-gradient(145deg, #444, #222);
+    border: 1px solid var(--gold-dark);
+    padding: 16px; border-radius: 14px;
+    color: var(--gold-light); width: 100%;
+    font-weight: bold; font-size: 16px; cursor: pointer;
+    margin-bottom: 12px; transition: 0.2s;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .btn-primary:active { background: #1a1a1a; }
+  /* 管理員儲存按鈕特別華麗 */
+  #t-a .btn-primary, #s-a .btn-primary, #p-a .btn-primary {
+    background: linear-gradient(145deg, var(--gold-main), var(--gold-dark));
+    color: #000; border: none;
+  }
+
+  /* 點名網格優化 */
+  .att-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .att-cell {
+    background: rgba(0,0,0,0.2); padding: 18px 2px;
+    border-radius: 12px; text-align: center;
+    font-size: 13px; border: 1px solid rgba(212, 175, 55, 0.1);
+    transition: 0.2s; color: var(--gold-light);
+  }
+  .att-cell.active-cell { border-color: var(--gold-main); background: rgba(212, 175, 55, 0.05); }
+
+  /* 導覽列優化 */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 500px;
+    background: rgba(26, 26, 26, 0.95);
+    display: flex; padding: 20px 0;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    z-index: 100; backdrop-filter: blur(10px);
+  }
+  .nav-item { flex: 1; text-align: center; font-size: 12px; color: #8e8e93; transition: 0.2s; }
+  .nav-item.active { color: var(--gold-main); font-weight: bold; text-shadow: 0 0 5px var(--gold-main); }
+
+  input {
+    width: 100%; padding: 16px; border-radius: 14px;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    background: rgba(0,0,0,0.3); color: var(--text-main);
+    font-size: 16px; box-sizing: border-box; margin-bottom: 18px;
+  }
+  input:focus { outline: none; border-color: var(--gold-main); box-shadow: 0 0 8px rgba(212, 175, 55, 0.2); }
+
+  /* 通知與警示 */
+  .msg-box {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px dashed var(--gold-main);
+    padding: 12px; border-radius: 12px;
+    margin: 15px 0; font-size: 14px; color: var(--gold-light);
+    line-height: 1.5;
+  }
+  .hist-item { display: flex; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid rgba(212, 175, 55, 0.1); font-size: 14px; color: #ccc; }
+  
+  /* 報表清單樣式 */
+  #report-list { text-align: left; font-size: 13px; max-height: 400px; overflow-y: auto; margin-bottom: 15px; }
+  #report-list::-webkit-scrollbar { width: 5px; }
+  #report-list::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 5px; }
+
+  h2, h3 { color: var(--gold-light); text-align: center; font-family: serif; }
 </style>
 </head>
 <body>
   <div id="lock-screen">
-    <div style="font-size:50px;margin-bottom:10px">🎭</div>
-    <div style="font-weight:bold;margin-bottom:10px">管理員登入</div>
+    <div class="main-title">112年莊敬高職音樂畢業公演</div>
+    <div class="sub-title">出席罰款管理系統</div>
     <div class="dot-container"><div id="dot0" class="dot"></div><div id="dot1" class="dot"></div><div id="dot2" class="dot"></div><div id="dot3" class="dot"></div></div>
     <div class="numpad">
       <button class="btn-n" onclick="v(1)">1</button><button class="btn-n" onclick="v(2)">2</button><button class="btn-n" onclick="v(3)">3</button>
@@ -47,39 +200,43 @@
       <button class="btn-n" onclick="v(7)">7</button><button class="btn-n" onclick="v(8)">8</button><button class="btn-n" onclick="v(9)">9</button>
       <button class="btn-n" style="background:none"></button><button class="btn-n" onclick="v(0)">0</button><button class="btn-n" onclick="d()">⌫</button>
     </div>
-    <button onclick="sw('s')" style="margin-top:40px;color:var(--blue);background:none;border:none;font-weight:bold;font-size:16px">👤 學生查詢入口</button>
+    <button onclick="sw('s')" style="margin-top:40px;color:var(--blue);background:none;border:none;font-weight:bold;font-size:16px;cursor:pointer">👤 學生查詢入口</button>
   </div>
 
   <div id="s-v" class="container" style="display:none">
+    <div class="main-title" style="font-size:18px">112年音樂畢業公演</div>
     <h2>個人出席查詢</h2>
     <div id="s-a"><input type="text" id="s-n" placeholder="輸入姓名"><button class="btn-primary" onclick="ck()">下一步</button></div>
     <div id="p-a" style="display:none;text-align:center">
-      <p id="p-m" style="margin-bottom:15px"></p>
+      <p id="p-m" style="margin-bottom:15px; color:var(--gold-light)"></p>
       <input type="password" id="s-p" placeholder="4位密碼" inputmode="numeric" maxlength="4">
       <button class="btn-primary" onclick="vy()">驗證進入</button>
     </div>
     <div id="d-a" style="display:none"></div>
-    <button onclick="location.reload()" style="margin-top:40px;width:100%;background:none;border:none;color:#8e8e93">← 返回</button>
+    <button onclick="location.reload()" style="margin-top:40px;width:100%;background:none;border:none;color:#8e8e93;cursor:pointer">← 返回</button>
   </div>
 
   <div id="a-v" class="container" style="display:none">
+    <div class="main-title" style="font-size:16px; text-align:left">112年音樂畢業公演 - 管理端</div>
+    
     <div id="t-l"><h3>學生名冊</h3><div id="h-l"></div></div>
     <div id="t-a" style="display:none"><h3>當日點名</h3><div class="att-grid" id="h-g"></div><button class="btn-primary" style="margin-top:25px" onclick="sa()">💾 儲存點名紀錄</button></div>
     <div id="t-r" style="display:none">
       <h3>財務報表</h3>
       <div class="card">
-        <div id="h-t" style="font-size:32px;color:var(--accent);font-weight:bold;text-align:center;margin-bottom:10px">$0</div>
-        <hr border="0" style="border-top:1px solid #333;margin:15px 0">
+        <div id="h-t" style="font-size:36px;color:var(--accent);font-weight:bold;text-align:center;margin-bottom:10px;text-shadow:0 0 10px rgba(255,107,53,0.3)">$0</div>
+        <hr border="0" style="border-top:1px solid rgba(212, 175, 55, 0.2);margin:15px 0">
         <div id="report-list">載入中...</div>
       </div>
-      <button class="btn-primary" style="background:var(--green)" onclick="exportExcel()">📊 輸出 Excel 報表</button>
+      <button class="btn-primary" style="background:linear-gradient(145deg, #2e7d32, #1b5e20); color:#fff; border:none" onclick="exportExcel()">📊 輸出 Excel 報表</button>
     </div>
     <div id="t-s" style="display:none">
       <h3>系統設定</h3>
-      <button class="btn-primary" style="background:var(--blue)" onclick="changeAdminPwd()">🔐 修改管理員密碼</button>
-      <button class="btn-primary" style="background:#ff453a" onclick="rs()">🛑 重設所有資料</button>
-      <button class="btn-primary" style="background:#2c2c2e;margin-top:15px" onclick="location.reload()">🔒 安全登出</button>
+      <button class="btn-primary" style="border-color:var(--blue); color:var(--blue)" onclick="changeAdminPwd()">🔐 修改管理員密碼</button>
+      <button class="btn-primary" style="border-color:var(--accent); color:var(--accent)" onclick="rs()">🛑 重設所有資料</button>
+      <button class="btn-primary" style="background:#2c2c2e;margin-top:15px; border:none" onclick="location.reload()">🔒 安全登出</button>
     </div>
+    
     <div class="bottom-nav">
       <div class="nav-item active" onclick="st('l', this)">👥名單</div>
       <div class="nav-item" onclick="st('a', this)">📅點名</div>
@@ -89,30 +246,32 @@
   </div>
 
 <script>
+  // Firebase 設定 (保持不變)
   const _c = { apiKey: "AIzaSyC_6aza1KH8GXxUbYBraK7wcqPrSUSF-Ns", authDomain: "jjvsmusic.firebaseapp.com", databaseURL: "https://jjvsmusic-default-rtdb.firebaseio.com", projectId: "jjvsmusic", storageBucket: "jjvsmusic.appspot.com", messagingSenderId: "754846318347", appId: "1:754846318347:web:865668e27c1529688432a5" };
   firebase.initializeApp(_c); const _db = firebase.database();
   
   let _sts = {}, _cid = null, _ap = "", _ta = {}, _masterPwd = "0902";
 
+  // 初始化與監聽 (保持不變)
   _db.ref('adminConfig/password').on('value', snap => { if(snap.val()) _masterPwd = snap.val(); });
   _db.ref('students').on('value', snap => { _sts = snap.val() || {}; _rd(); _updateReport(); if(_cid) _sd(); });
 
-  // 管理端名單渲染：增加「通知」按鈕
+  // 管理端名單渲染 (保持不變，CSS 已優化)
   function _rd() {
     const l = document.getElementById('h-l'); if(!l) return;
     l.innerHTML = Object.entries(_sts).map(([id, s]) => {
       const o = Math.max(0, (s.lateCount||0) - (s.paidCount||0)) * 100;
       return `<div class="card"><div class="card-top"><div><b>${s.name}</b></div><div class="${o>0?'badge-debt':'badge-ok'}">$${o}</div></div>
-      <div style="display:flex;gap:5px">
+      <div style="display:flex;gap:6px">
         <button class="btn-action" onclick="ac('${id}','paid')">💰收錢</button>
-        <button class="btn-action" style="background:var(--accent);color:#fff" onclick="ac('${id}','late')">+遲到</button>
-        <button class="btn-action" style="background:var(--blue);color:#fff" onclick="sendMsg('${id}')">💬通知</button>
-        <button class="btn-action" style="background:#2c2c2e;color:#fff;max-width:40px" onclick="ad('${id}')">調</button>
+        <button class="btn-action" style="background:linear-gradient(145deg, #ff8c00, #ff6b35);color:#fff" onclick="ac('${id}','late')">+遲到</button>
+        <button class="btn-action" style="background:linear-gradient(145deg, #1e90ff, #0a84ff);color:#fff" onclick="sendMsg('${id}')">💬通知</button>
+        <button class="btn-action" style="background:#3a3a3c;color:#fff;max-width:40px" onclick="ad('${id}')">調</button>
       </div></div>`;
     }).join('');
   }
 
-  // 1. 發送通知功能
+  // 1. 發送通知功能 (保持不變)
   function sendMsg(id) {
     const msg = prompt(`發送個人通知給 ${_sts[id].name}：\n(訊息會直接顯示在學生的 App 頁面)`);
     if(msg) {
@@ -121,25 +280,24 @@
     }
   }
 
-  // 2. 學生端查詢畫面優化：顯示通知與催繳警告
+  // 2. 學生端查詢畫面優化 (保持不變，CSS 已優化)
   function _sd() {
     document.getElementById('p-a').style.display = 'none';
     const s = _sts[_cid];
     const debt = Math.max(0, (s.lateCount||0) - (s.paidCount||0)) * 100;
     const h = s.history ? Object.values(s.history).reverse() : [];
     
-    let html = `<div class="card" style="border-left:5px solid ${debt>0? 'var(--accent)':'var(--green)'}">
-                  <div style="font-size:14px">學生姓名：<b>${s.name}</b></div>
-                  <div style="font-size:28px;font-weight:900;margin:10px 0;color:${debt>0?'var(--accent)':'var(--green)'}">$${debt}</div>
-                  ${debt > 0 ? `<div style="color:var(--red);font-size:12px;font-weight:bold">⚠️ 提醒：您目前尚有欠費，請儘速繳納</div>` : ''}
+    let html = `<div class="card" style="border-left:5px solid ${debt>0? 'var(--accent)':'var(--gold-main)'}; background:rgba(212,175,55,0.05)">
+                  <div style="font-size:14px; color:var(--gold-light)">學生姓名：<b>${s.name}</b></div>
+                  <div style="font-size:36px;font-weight:900;margin:10px 0;color:${debt>0?'var(--accent)':'var(--gold-main)'}; text-shadow:0 0 10px rgba(212,175,55,0.3)">$${debt}</div>
+                  ${debt > 0 ? `<div style="color:var(--accent);font-size:12px;font-weight:bold">⚠️ 提醒：您目前尚有欠費，請儘速繳納</div>` : '<div style="color:var(--gold-main);font-size:12px">紀錄良好，繼續保持！</div>'}
                 </div>`;
     
-    // 如果有管理員發送的通知
     if(s.notification) {
       html += `<div class="msg-box"><b>📢 管理員通知：</b><br>${s.notification}</div>`;
     }
 
-    html += `<div style="margin:20px 0 10px 5px;font-weight:bold;font-size:14px">活動紀錄回顧</div>`;
+    html += `<div style="margin:25px 0 10px 5px;font-weight:bold;font-size:15px; color:var(--gold-light); letter-spacing:1px">活動紀錄回顧</div>`;
     html += h.map(i => `<div class="hist-item"><span>${i.type}${i.amount?' $'+i.amount:''}</span><span>${i.time}</span></div>`).join('');
     
     const container = document.getElementById('d-a');
@@ -147,23 +305,21 @@
     container.innerHTML = html;
   }
 
-  // 3. 調整功能優化：用於輸入之前的欠費
+  // 3. 調整功能優化 (保持不變)
   function ad(id) {
-    const s = _sts[id];
-    const amt = prompt(`[歷史欠費輸入] \n請輸入 ${_sts[id].name} 之前累積的欠費總額：\n(系統會自動轉換為遲到次數，100元=1次)`);
-    if(amt !== null && !isNaN(amt)) {
+    const amt = prompt(`[歷史欠費輸入] \n請輸入 ${_sts[id].name} 之前累積的欠費總額：\n(100元=1次)`);
+    if(amt !== null && !isNaN(amt) && amt !== "") {
       const points = Math.ceil(amt/100);
       _db.ref(`students/${id}`).update({
-        lateCount: points,
-        paidCount: 0,
-        notification: `已由管理員手動調整歷史欠費為 $${amt}`
+        lateCount: points, paidCount: 0,
+        notification: `管理員手動調整歷史欠費為 $${amt}`
       });
       _db.ref(`students/${id}/history`).push({type:'歷史欠費調整', amount: amt, time: new Date().toLocaleDateString()});
       alert("已更新歷史欠費資料");
     }
   }
 
-  // 核心邏輯 (其餘部分同 v3.0)
+  // 核心邏輯 (保持不變)
   function ac(id, ty) {
     const s = _sts[id], tm = new Date().toLocaleDateString();
     if(ty==='paid') {
@@ -179,15 +335,20 @@
     }
   }
 
-  function ck() { const n = document.getElementById('s-n').value.trim(); const f = Object.entries(_sts).find(([id, s]) => s.name === n); if(!f) return alert("查無姓名"); _cid = f[0]; document.getElementById('s-a').style.display = 'none'; document.getElementById('p-a').style.display = 'block'; document.getElementById('p-m').innerHTML = f[1].password ? `歡迎回來，<b>${n}</b>` : `首次查詢，請設定密碼`; }
-  function vy() { const p = document.getElementById('s-p').value; const s = _sts[_cid]; if(!s.password) { _db.ref(`students/${_cid}`).update({password: p}).then(() => _sd()); } else if(s.password === p) { _sd(); } else { alert("密碼錯誤"); } }
+  // UI 與 驗證邏輯 (保持不變，已套用新 CSS)
   function v(n) { if(_ap.length < 4) { _ap += n; _ud(); if(_ap.length === 4) { setTimeout(() => { if(_ap === _masterPwd) { document.getElementById('lock-screen').style.display = 'none'; document.getElementById('a-v').style.display = 'block'; st('l'); } else { alert("密碼錯誤"); _ap = ""; _ud(); } }, 200); } } }
   function d() { _ap = _ap.slice(0,-1); _ud(); }
   function _ud() { for(let i=0; i<4; i++) document.getElementById('dot'+i).className = 'dot' + (i < _ap.length ? ' active' : ''); }
+  
+  function ck() { const n = document.getElementById('s-n').value.trim(); const f = Object.entries(_sts).find(([id, s]) => s.name === n); if(!f) return alert("查無姓名"); _cid = f[0]; document.getElementById('s-a').style.display = 'none'; document.getElementById('p-a').style.display = 'block'; document.getElementById('p-m').innerHTML = f[1].password ? `歡迎回來，<b>${n}</b>` : `首次查詢，請設定密碼`; }
+  function vy() { const p = document.getElementById('s-p').value; const s = _sts[_cid]; if(!s.password) { _db.ref(`students/${_cid}`).update({password: p}).then(() => _sd()); } else if(s.password === p) { _sd(); } else { alert("密碼錯誤"); } }
+  
   function st(t, el) { ['l','a','r','s'].forEach(id => document.getElementById('t-'+id).style.display='none'); document.getElementById('t-'+t).style.display='block'; if(el) { document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); } if(t==='a') { _ta = {}; Object.keys(_sts).forEach(id => _ta[id] = 'present'); _rg(); } }
-  function _rg() { document.getElementById('h-g').innerHTML = Object.entries(_sts).map(([id, s]) => { const st = _ta[id]; const icon = st==='present'?'✅':st==='late'?'⏰':st==='absent'?'❌':'🍃'; return `<div class="att-cell" onclick="cy('${id}')">${s.name}<br>${icon}</div>`; }).join(''); }
+  function _rg() { document.getElementById('h-g').innerHTML = Object.entries(_sts).map(([id, s]) => { const st = _ta[id]; const icon = st==='present'?'✅':st==='late'?'⏰':st==='absent'?'❌':'🍃'; return `<div class="att-cell ${st!=='present'?'active-cell':''}" onclick="cy('${id}')">${s.name}<br>${icon}</div>`; }).join(''); }
   window.cy = (id) => { const ss = ['present','late','absent','leave']; _ta[id] = ss[(ss.indexOf(_ta[id])+1)%4]; _rg(); };
-  function sa() { const tm = new Date().toLocaleDateString(); if(!confirm("儲存點名？")) return; Object.entries(_ta).forEach(([id, status]) => { if(status==='late') { _db.ref(`students/${id}`).update({lateCount: (_sts[id].lateCount||0)+1}); _db.ref(`students/${id}/history`).push({type: '遲到', time: tm}); } }); alert("儲存成功"); st('l'); }
+  
+  function sa() { const tm = new Date().toLocaleDateString(); if(!confirm("儲存儲存今日點名紀錄？")) return; Object.entries(_ta).forEach(([id, status]) => { if(status==='late') { _db.ref(`students/${id}`).update({lateCount: (_sts[id].lateCount||0)+1}); _db.ref(`students/${id}/history`).push({type: '遲到', time: tm}); } }); alert("儲存成功"); st('l'); }
+  
   function _updateReport() {
     const listDiv = document.getElementById('report-list'); let totalDebt = 0; let html = "";
     Object.values(_sts).forEach(s => {
@@ -195,25 +356,27 @@
       if(debt > 0) {
         const hist = s.history ? Object.values(s.history) : [];
         const lateDates = hist.filter(h => h.type === '遲到').map(h => h.time).join(', ');
-        html += `<div style="margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:8px"><b>${s.name}</b> <span style="color:var(--accent)">$${debt}</span><br><small>${lateDates}</small></div>`;
+        html += `<div style="margin-bottom:15px; border-bottom:1px solid rgba(212,175,55,0.1); padding-bottom:8px"><b style="color:var(--gold-light)">${s.name}</b> <span style="color:var(--accent); font-weight:bold">$${debt}</span><br><small style="color:#aaa">${lateDates}</small></div>`;
       }
     });
-    if(listDiv) listDiv.innerHTML = html;
+    if(listDiv) listDiv.innerHTML = html || '<div style="text-align:center; color:#888; padding:20px">目前無欠費紀錄</div>';
     if(document.getElementById('h-t')) document.getElementById('h-t').textContent = '$' + totalDebt;
   }
+  
   function exportExcel() {
-    const data = [["姓名", "欠費金額", "遲到次數", "繳費明細"]];
+    const data = [["112年音樂畢業公演 - 財務報表"], ["導出時間：", new Date().toLocaleString()], [], ["姓名", "欠費金額", "總遲到次數", "繳費明細"]];
     Object.values(_sts).forEach(s => {
       const debt = Math.max(0, (s.lateCount||0) - (s.paidCount||0)) * 100;
       const payLogs = s.history ? Object.values(s.history).filter(h => h.type === '繳費').map(h => `${h.time}($${h.amount})`).join(' | ') : "";
       data.push([s.name, debt, s.lateCount||0, payLogs]);
     });
     const ws = XLSX.utils.aoa_to_sheet(data); const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "報表"); XLSX.writeFile(wb, `報表.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "財務報表"); XLSX.writeFile(wb, `莊敬音樂公演報表_${new Date().toLocaleDateString()}.xlsx`);
   }
+  
   function sw(m) { document.getElementById('lock-screen').style.display = 'none'; document.getElementById('s-v').style.display = 'block'; }
-  function rs() { if(confirm("確定重設？")) _db.ref('students').remove().then(()=>location.reload()); }
-  function changeAdminPwd() { const p = prompt("新密碼(4位)："); if(p) _db.ref('adminConfig/password').set(p).then(()=>location.reload()); }
+  function rs() { if(prompt("管理密碼？") === _masterPwd) { if(confirm("🛑 確定重設所有資料？此操作無法還原！")) _db.ref('students').remove().then(()=>location.reload()); } else { alert("密碼錯誤"); } }
+  function changeAdminPwd() { const p = prompt("設定新 4 位數管理密碼："); if(p && p.length===4 && !isNaN(p)) _db.ref('adminConfig/password').set(p).then(()=>location.reload()); else if(p) alert("請輸入4位數字"); }
 </script>
 </body>
 </html>
