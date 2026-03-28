@@ -40,7 +40,6 @@
   let attendTemp = {};
   let currentStudentId = null;
 
-  // 安全管理密碼設定 (僅在此處修改)
   const MASTER_KEY = "0902"; 
 
   window.show = (id) => { const el = document.getElementById(id); if(el) el.style.display='block'; };
@@ -117,7 +116,7 @@
         <div class="card-pills"><div class="pill">遲到 <span>${s.lateCount}</span></div><div class="pill">出席 <span>${s.presentCount}</span></div><div class="pill">請假 <span>${s.leaveCount||0}</span></div></div>
       </div>
       <div class="section-label">日期與事由紀錄</div>
-      ${hist.map(h=>`<div class="history-item"><span>${h.type==='late'?'⏰ 遲到 $'+FEE : h.type==='paid'?'💰 已繳 $'+FEE : h.type==='leave'?'🍃 請假' : h.type==='absent'?'❌ 缺席' : '✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}`;
+      ${hist.map(h=>`<div class="history-item"><span>${h.type==='late'?'⏰ 遲到 $'+FEE : h.type==='paid'?'💰 已繳 $'+FEE : h.type==='leave'?'🍃 請假' : h.type==='absent'?'❌ 缺席' : '✅ 出席' : h.type==='adjust'?'📝 金額調整'}</span><span class="time">${h.time}</span></div>`).join('')}`;
   }
 
   let pinBuffer = '';
@@ -149,9 +148,31 @@
       const owed = Math.max(0, s.lateCount - s.paidCount) * FEE;
       return `<div class="student-card"><div class="card-top"><div><div class="student-name">${s.name}</div><div class="student-num">${id}</div></div>
       <div class="fee-badge ${owed>0?'':'model-badge'}">${owed>0?'$'+owed:'已清'}</div></div>
-      <div style="display:flex;gap:10px"><button onclick="quickAction('${id}','paid')" style="flex:1;background:var(--green);border:none;padding:10px;border-radius:10px;font-weight:bold;color:#000">收錢</button>
-      <button onclick="quickAction('${id}','late')" style="flex:1;background:var(--accent);border:none;padding:10px;border-radius:10px;color:#fff;font-weight:bold">+遲到</button></div></div>`;
+      <div style="display:flex;gap:8px">
+        <button onclick="quickAction('${id}','paid')" style="flex:1.5;background:var(--green);border:none;padding:10px;border-radius:10px;font-weight:bold;color:#000">收錢</button>
+        <button onclick="quickAction('${id}','late')" style="flex:1;background:var(--accent);border:none;padding:10px;border-radius:10px;color:#fff;font-weight:bold">+遲</button>
+        <button onclick="adjustBalance('${id}')" style="flex:1;background:var(--surface);border:1px solid var(--border);padding:10px;border-radius:10px;color:var(--muted);font-weight:bold;font-size:12px">📝 調整</button>
+      </div></div>`;
     }).join('');
+  };
+
+  window.adjustBalance = async function(id) {
+    const s = students[id];
+    const currentOwed = Math.max(0, s.lateCount - s.paidCount) * FEE;
+    const newAmount = prompt(`調整【${s.name}】的當前欠費：\n(目前欠 $${currentOwed}，請輸入新金額)`, currentOwed);
+    
+    if (newAmount !== null && !isNaN(newAmount)) {
+      const amt = parseInt(newAmount);
+      const newLateCount = Math.ceil(amt / FEE);
+      const time = new Date().toLocaleDateString('zh-TW') + " (手動調整)";
+      
+      await update(ref(db, `students/${id}`), {
+        lateCount: newLateCount,
+        paidCount: 0 // 重設已繳次數，讓欠費等於新輸入的金額
+      });
+      await push(ref(db, `students/${id}/history`), { type: 'adjust', time });
+      showToast("金額已更新");
+    }
   };
 
   window.quickAction = async function(id, type) {
