@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>音演三莊公演管理系統 V3.8</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
+<title>音演三莊公演管理系統 V1.0</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -35,6 +34,7 @@
     text-shadow: 0 5px 20px rgba(212, 175, 55, 0.4); line-height: 1.2;
   }
 
+  /* 登入卡片 */
   .login-card { 
     background: var(--glass); border-radius: 40px; padding: 40px 25px; 
     border: 2px solid var(--gold-main); backdrop-filter: blur(20px); 
@@ -52,6 +52,7 @@
     color: #000; font-weight: 900; font-size: 26px; border: none; cursor: pointer; 
   }
 
+  /* 名單分頁 */
   .admin-panel { display: none; padding-bottom: 160px; }
   .list-item { 
     background: rgba(255,255,255,0.08); padding: 22px; border-radius: 30px; 
@@ -59,27 +60,35 @@
   }
   .name-link { font-size: 34px; font-weight: 900; color: var(--gold-light); cursor: pointer; text-decoration: underline; }
 
+  /* 免死金牌按鈕設計 */
   .quota-row { display: flex; gap: 10px; margin-top: 15px; }
-  .quota-box-text { 
+  .death-plaque { 
     flex: 1; height: 65px; border: 2px solid var(--gold-main); border-radius: 15px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: bold; color: var(--gold-main); transition: 0.3s; cursor: pointer;
+    font-size: 16px; font-weight: bold; color: var(--gold-main); transition: 0.3s; cursor: pointer;
   }
-  .quota-box-text.used { background: var(--gold-main); color: #000; }
+  .death-plaque.used { background: var(--gold-main); color: #000; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
 
-  .att-grid-item { 
-    background: rgba(255,255,255,0.05); border: 1px solid #444; border-radius: 25px; 
-    padding: 20px 10px; margin-bottom: 20px; position: relative;
+  /* 點名格樣式（回歸切換模式） */
+  .att-box { 
+    background: rgba(255,255,255,0.05); padding: 30px 10px 15px; border-radius: 25px; 
+    text-align: center; border: 1px solid #444; margin-bottom: 5px; position: relative;
+    min-height: 140px; display: flex; flex-direction: column; justify-content: space-between;
   }
-  .att-name { font-size: 28px; font-weight: 900; color: var(--gold-light); margin-bottom: 15px; display: block; text-align: center; }
-  .att-no { position: absolute; top: 15px; left: 20px; font-size: 14px; color: var(--gold-main); opacity: 0.6; }
+  .att-box.active-late { border-color: var(--gold-main); background: rgba(212, 175, 55, 0.1); }
+  .att-box.active-absent { border-color: var(--accent-red); background: rgba(255, 59, 48, 0.1); }
+  .box-no { position: absolute; top: 12px; left: 15px; font-size: 12px; color: var(--gold-main); font-weight: bold; }
   
-  .att-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .att-btn { 
-    padding: 12px 5px; border-radius: 12px; border: 1px solid #666; 
-    background: #222; color: #fff; font-size: 13px; font-weight: bold; cursor: pointer;
-  }
-  .att-btn.active { background: var(--gold-main); color: #000; border-color: var(--gold-light); }
+  .att-status-text { font-size: 22px; font-weight: 900; }
+  .status-present { color: var(--success); }
+  .status-late10 { color: #f0ad4e; }
+  .status-late30 { color: #ff8c00; }
+  .status-absent { color: var(--accent-red); }
+  .status-leave { color: #5ac8fa; }
+
+  /* 蔡慧琳專用小按鈕 */
+  .special-tools { display: flex; gap: 5px; justify-content: center; margin-top: 10px; }
+  .tool-btn { padding: 5px 8px; font-size: 11px; border-radius: 5px; border: 1px solid var(--gold-main); background: #000; color: var(--gold-main); }
 
   .nav-bar { 
     position: fixed; bottom: 0; left: 0; width: 100%; height: 95px;
@@ -93,34 +102,36 @@
   .tag-unpaid { background: var(--accent-red); color: #fff; }
   .tag-paid { background: var(--success); color: #fff; }
   
+  .list-divider { text-align: center; color: var(--gold-main); font-weight: 900; font-size: 24px; margin: 40px 0 20px; border-top: 3px solid var(--gold-main); padding-top: 15px; letter-spacing: 5px; }
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; }
   .modal-content { background: #111; border-radius: 40px; padding: 30px; border: 3px solid var(--gold-main); max-width: 600px; margin: 0 auto; }
 </style>
 </head>
 <body>
 
-  <div class="deco-symbol" style="top:5%; left:5%; font-size:100px;">𝄞</div>
-  <div class="deco-symbol" style="top:25%; right:8%; font-size:80px;">𝄢</div>
-  <div class="deco-symbol" style="bottom:15%; left:10%; font-size:90px;">♫</div>
-  <div class="deco-symbol" style="bottom:8%; right:5%; font-size:70px;">♬</div>
+  <div class="deco-symbol" style="top:5%; left:5%; font-size:80px;">🎹</div>
+  <div class="deco-symbol" style="top:25%; right:8%; font-size:100px;">𝄞</div>
+  <div class="deco-symbol" style="bottom:20%; left:10%; font-size:90px;">🎸</div>
+  <div class="deco-symbol" style="bottom:8%; right:5%; font-size:70px;">🎷</div>
 
   <div class="app-container" id="view-student">
     <div class="header"><div class="main-title">音演三莊<br>公演管理系統</div></div>
     <div class="login-card" id="student-login">
+        <div style="text-align:center; font-size:90px; margin-bottom:10px;">🎻</div>
         <div id="step-name">
-            <span style="display:block; text-align:center; color:var(--gold-main); margin-bottom:20px; font-size:24px; font-weight:bold;">個人帳目與細項查詢</span>
+            <span style="display:block; text-align:center; color:var(--gold-main); margin-bottom:20px; font-size:24px; font-weight:bold;">個人帳目查詢系統</span>
             <input type="text" id="stu-name" placeholder="請輸入姓名">
-            <button class="btn-gold" onclick="searchStudent()">登入系統</button>
+            <button class="btn-gold" onclick="searchStudent()">登入查詢</button>
         </div>
         <div id="step-first-set" style="display:none">
-            <p style="font-size:24px; text-align:center;">首次登入，設定 4 位密碼</p>
-            <input type="password" id="first-pwd" placeholder="數字密碼" maxlength="4" inputmode="numeric">
-            <button class="btn-gold" onclick="setPassword()">設定並登入</button>
+            <p style="font-size:24px; text-align:center;">首次登入，請設定密碼</p>
+            <input type="password" id="first-pwd" placeholder="4 位數字" maxlength="4" inputmode="numeric">
+            <button class="btn-gold" onclick="setPassword()">設定完成並進入</button>
         </div>
         <div id="step-auth" style="display:none">
             <p id="auth-welcome" style="font-size:24px; text-align:center; color:var(--gold-light);"></p>
             <input type="password" id="auth-pwd" placeholder="密碼" maxlength="4" inputmode="numeric">
-            <button class="btn-gold" onclick="authStudent()">進入查詢</button>
+            <button class="btn-gold" onclick="authStudent()">驗證進入</button>
         </div>
     </div>
     <div id="student-info" style="display:none"></div>
@@ -135,20 +146,23 @@
     <div id="pane-list"><div id="h-l"></div></div> 
     
     <div id="pane-att" style="display:none">
-        <div id="att-grid"></div>
+        <div style="background:rgba(212,175,55,0.1); padding:20px; border-radius:20px; color:var(--gold-main); font-size:18px; text-align:center; margin-bottom:20px; font-weight:bold;">
+            點擊人名方塊循環切換狀態
+        </div>
+        <div id="att-grid" style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;"></div>
         <div style="height:40px;"></div>
-        <button class="btn-gold" style="background:var(--success); color:#fff; height:110px; font-size:32px;" onclick="submitAtt()">💾 儲存今日所有細項</button>
+        <button class="btn-gold" style="background:var(--success); color:#fff; height:110px; font-size:32px;" onclick="submitAtt()">💾 儲存今日點名與罰款</button>
     </div>
 
     <div id="pane-rep" style="display:none">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h3>欠費報表</h3><div id="total-sum-badge" style="background:var(--accent-red); padding:10px 20px; border-radius:20px; font-weight:bold; font-size:24px;">$0</div></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h3>欠費總覽</h3><div id="total-sum-badge" style="background:var(--accent-red); padding:10px 20px; border-radius:20px; font-weight:bold; font-size:24px;">$0</div></div>
         <div id="full-report-list" class="login-card" style="padding:20px; height: 50vh; overflow-y: auto; text-align: left; font-size:22px;"></div>
-        <button class="btn-gold" style="background:#248a3d; color:#fff; margin-top:20px;" onclick="doDetailedExcel()">📊 下載詳細對帳 Excel</button>
+        <button class="btn-gold" style="background:#248a3d; color:#fff; margin-top:20px;" onclick="doDetailedExcel()">📊 下載對帳 Excel</button>
     </div>
 
     <div id="pane-set" style="display:none">
         <div class="login-card">
-            <button class="btn-gold" onclick="resetAllAccounting()" style="background:var(--accent-red); color:#fff; font-size:22px;">🛑 確定帳目大歸零</button>
+            <button class="btn-gold" onclick="resetAllAccounting()" style="background:var(--accent-red); color:#fff; font-size:22px;">🛑 確定帳目歸零(欠1300)</button>
             <div style="height:40px;"></div>
             <button class="btn-gold" onclick="forceRestoreList()" style="background:var(--success); color:#fff; font-size:22px;">🔧 修復 55 人名單</button>
         </div>
@@ -172,9 +186,9 @@
         <div style="display:grid; grid-template-columns: 1fr; gap:15px; margin-top:30px;">
             <button class="btn-gold" style="background:#444; color:#fff; font-size:22px;" onclick="manualAddFineFromModal()">手動雜費</button>
             <button class="btn-gold" style="background:#222; color:#fff; font-size:22px;" onclick="setPropFromModal()">道具費設定</button>
-            <button class="btn-gold" style="font-size:22px;" onclick="adminPaidFromModal()">收受現金</button>
+            <button class="btn-gold" style="font-size:22px;" onclick="adminPaidFromModal()">現金收訖</button>
         </div>
-        <div style="margin-top:30px; border-top:2px solid #333; padding-top:30px;"><b style="font-size:24px;">完整紀錄明細：</b><div id="modal-history" style="font-size:20px; margin-top:15px; max-height:300px; overflow-y:auto;"></div></div>
+        <div style="margin-top:30px; border-top:2px solid #333; padding-top:30px;"><b style="font-size:24px;">歷史明細：</b><div id="modal-history" style="font-size:20px; margin-top:15px; max-height:300px; overflow-y:auto;"></div></div>
     </div>
   </div>
 
@@ -202,7 +216,7 @@
     const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99));
     let html = "";
     sorted.forEach(([id, s]) => {
-      if(s.no === 42) html += `<div style="text-align:center; color:var(--gold-main); font-weight:900; font-size:24px; margin:30px 0;">—— 演三莊名單 ——</div>`;
+      if(s.no === 42) html += `<div class="list-divider">—— 演三莊名單 ——</div>`;
       const debt = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0);
       html += `<div class="list-item">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -210,8 +224,8 @@
             <span onclick="toggleFund('${id}', ${s.fundPaid})" class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">${s.fundPaid?'基金已繳':'欠 1300'}</span>
         </div>
         <div class="quota-row">
-            <div class="quota-box-text ${s.leaveQuota<=1?'used':''}" onclick="adminDeduct('${id}',1)">${s.leaveQuota<=1?'已抵銷':'1 次折抵'}</div>
-            <div class="quota-box-text ${s.leaveQuota<=0?'used':''}" onclick="adminDeduct('${id}',0)">${s.leaveQuota<=0?'已抵銷':'2 次折抵'}</div>
+            <div class="death-plaque ${s.leaveQuota<=1?'used':''}" onclick="adminDeduct('${id}',1)">${s.leaveQuota<=1?'✔ 免死金牌一':'🏅 免死金牌一'}</div>
+            <div class="death-plaque ${s.leaveQuota<=0?'used':''}" onclick="adminDeduct('${id}',0)">${s.leaveQuota<=0?'✔ 免死金牌二':'🏅 免死金牌二'}</div>
         </div>
         <div style="text-align:right; margin-top:15px;"><b style="color:var(--accent-red); font-size:40px;">$${debt}</b></div>
       </div>`;
@@ -223,28 +237,28 @@
     const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99));
     document.getElementById('att-grid').innerHTML = sorted.map(([id, s]) => {
       if (!_attData[id]) {
-          if (s.name === '蔡慧琳') _attData[id] = { type: 'special', sum: 0, early: false, p1: false, extra: 0, note: '' };
+          if (s.name === '蔡慧琳') _attData[id] = { type: 'special', sum: 0, note: '' };
           else _attData[id] = { type: 'normal', status: 'present', sum: 0, note: '' };
       }
       const d = _attData[id];
       if (s.name === '蔡慧琳') {
-          return `<div class="att-grid-item">
-            <span class="att-no">19</span><b class="att-name">${s.name} (加成制)</b>
-            <div class="att-btn-group">
-                <button class="att-btn ${d.early?'active':''}" onclick="toggleSpecial('${id}','early')">8:00遲(+10)</button>
-                <button class="att-btn ${d.p1?'active':''}" onclick="toggleSpecial('${id}','p1')">第一節(+20)</button>
-                <button class="att-btn" onclick="addExtra('${id}')">追加1節(+10)</button>
-                <button class="att-btn" onclick="resetSpecial('${id}')">重設</button>
+          return `<div class="att-box special-att-box">
+            <span class="box-no">19</span><b style="font-size:24px;">${s.name}</b>
+            <div style="font-size:20px; font-weight:900; color:var(--gold-main); margin:5px 0;">目前累計：$${d.sum}</div>
+            <div class="special-tools">
+                <button class="tool-btn" onclick="addHui('${id}',10)">+早遲10</button>
+                <button class="tool-btn" onclick="addHui('${id}',20)">+第一節20</button>
+                <button class="tool-btn" onclick="addHui('${id}',10)">+追加10</button>
+                <button class="tool-btn" onclick="resetHui('${id}')">重設</button>
             </div>
-            <div style="text-align:center; margin-top:10px; font-weight:900; color:var(--gold-main); font-size:20px;">當日累計：$${d.sum}</div>
-            <button onclick="setNote(event,'${id}')" style="width:100%; margin-top:10px; border-radius:10px; background:#444; color:#fff; border:none; padding:10px;">${d.note?'已註記':'寫註記'}</button>
+            <button onclick="setNote(event,'${id}')" style="font-size:12px; border-radius:10px; background:#444; color:#fff; border:none; padding:8px; margin-top:10px;">註記</button>
           </div>`;
       }
       const stMap = { 'present':['出席','status-present'], 'late10':['早遲 10','status-late10'], 'late30':['全遲 30','status-late30'], 'absent':['缺席 100','status-absent'], 'leave':['請假 0','status-leave'] };
-      return `<div class="att-grid-item" onclick="cycleNormal('${id}')">
-        <span class="att-no">${s.no}</span><b class="att-name">${s.name}</b>
-        <div style="text-align:center;"><span class="att-status-text ${stMap[d.status][1]}">${stMap[d.status][0]}</span></div>
-        <button onclick="setNote(event,'${id}')" style="width:100%; margin-top:15px; border-radius:10px; background:#332b12; color:var(--gold-main); border:1px solid var(--gold-main); padding:10px;">${d.note?'已註記':'寫註記'}</button>
+      return `<div id="at-${id}" onclick="cycleNormal('${id}')" class="att-box ${d.status!=='present'?'active-late':''}">
+        <span class="box-no">${s.no}</span><b style="font-size:24px;">${s.name}</b>
+        <span class="att-status-text ${stMap[d.status][1]}">${stMap[d.status][0]}</span>
+        <button onclick="setNote(event,'${id}')" style="font-size:12px; background:#332b12; color:var(--gold-main); border:1px solid var(--gold-main); border-radius:10px; padding:5px 15px;">註記</button>
       </div>`;
     }).join('');
   }
@@ -254,50 +268,35 @@
       let idx = cycle.indexOf(d.status); d.status = cycle[(idx + 1) % 5];
       d.sum = { 'present':0, 'late10':10, 'late30':30, 'absent':100, 'leave':0 }[d.status]; renderAttGrid();
   }
-
-  function toggleSpecial(id, type) { const d = _attData[id]; if(type === 'early') d.early = !d.early; if(type === 'p1') d.p1 = !d.p1; d.sum = (d.early?10:0) + (d.p1?20:0) + (d.extra*10); renderAttGrid(); }
-  function addExtra(id) { _attData[id].extra++; _attData[id].sum += 10; renderAttGrid(); }
-  function resetSpecial(id) { _attData[id] = { type: 'special', sum: 0, early: false, p1: false, extra: 0, note: _attData[id].note }; renderAttGrid(); }
+  function addHui(id, val) { _attData[id].sum += val; renderAttGrid(); }
+  function resetHui(id) { _attData[id].sum = 0; renderAttGrid(); }
 
   function submitAtt() {
       const t = new Date().toLocaleDateString();
       Object.entries(_attData).forEach(([id, d]) => {
           if(d.sum > 0) {
-              let reason = d.type === 'normal' ? { 'late10':"早遲(音三班費)", 'late30':"全遲(音三班費)", 'absent':"缺席(畢音罰款)" }[d.status] : `特殊計費(早遲+第一節+${d.extra}節) (班費)`;
+              let reason = d.type === 'normal' ? { 'late10':"早遲(班費)", 'late30':"全遲(班費)", 'absent':"缺席(畢音罰款)" }[d.status] : `特殊加成累計 (班費)`;
               _db.ref(`students/${id}`).update({ totalFine: (_all[id].totalFine||0) + d.sum });
               _db.ref(`students/${id}/history`).push({ type: reason, amt: d.sum, time: t });
           }
           if(d.note) _db.ref(`students/${id}/history`).push({ type: "點名註記", note: d.note, time: t });
       });
-      _attData = {}; alert("💾 紀錄已儲存！"); go('list');
+      _attData = {}; alert("💾 點名已存檔！金額已更新。"); go('list');
   }
 
-  // 詳細對帳 Excel 輸出邏輯
   function doDetailedExcel() {
-      const data = [["座號", "姓名", "日期", "異動項目", "變動金額", "詳細備註", "基金狀態"]];
-      const sorted = Object.values(_all).sort((a,b)=>a.no-b.no);
-      sorted.forEach(s => {
-          const fund = s.fundPaid ? "已繳清" : "未繳";
-          if (!s.history || Object.keys(s.history).length === 0) {
-              data.push([s.no, s.name, "無", "尚無異動紀錄", 0, "無", fund]);
-          } else {
-              Object.values(s.history).forEach(h => {
-                  data.push([s.no, s.name, h.time || "無", h.type || "", h.amt || 0, h.note || "", fund]);
-              });
-          }
+      const data = [["座號", "姓名", "日期", "異動項目", "金額", "備註", "基金"]];
+      Object.values(_all).sort((a,b)=>a.no-b.no).forEach(s => {
+          const fund = s.fundPaid ? "已繳" : "未繳";
+          if (!s.history) data.push([s.no, s.name, "-", "無紀錄", 0, "-", fund]);
+          else Object.values(s.history).forEach(h => data.push([s.no, s.name, h.time||"-", h.type||"", h.amt||0, h.note||"", fund]));
       });
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "對帳流水單");
-      const d = new Date();
-      const m = (d.getMonth()+1).toString().padStart(2,'0');
-      const day = d.getDate().toString().padStart(2,'0');
-      const filename = `音演三莊公演帳目_${m}${day}.xlsx`;
+      const ws = XLSX.utils.aoa_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "對帳單");
+      const d = new Date(); const filename = `音演三莊公演帳目_${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}.xlsx`;
       XLSX.writeFile(wb, filename);
   }
 
-  // 基礎邏輯與系統維持
-  function resetAllAccounting() { if(confirm("確定全部帳目重設？名單保留。")) { Object.keys(_all).forEach(id => _db.ref(`students/${id}`).update({ totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false, propNote:"", history:null, password:null })); alert("數據已全數歸零！"); } }
+  function resetAllAccounting() { if(confirm("確定帳目歸零？名單保留。")) { Object.keys(_all).forEach(id => _db.ref(`students/${id}`).update({ totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false, propNote:"", history:null, password:null })); alert("歸零成功！"); } }
   function forceRestoreList(isAuto=false) { if(!isAuto && !confirm("修復名單？")) return; ALL_NAMES.forEach((n, index) => { const exists = Object.values(_all).find(s => s.name === n); if(!exists) _db.ref('students').push({ no:index+1, name:n, totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false }); }); }
   function searchStudent() { const n = document.getElementById('stu-name').value.trim(); const f = Object.entries(_all).find(([id, s]) => s.name === n); if(!f) return alert("查無姓名"); _user = f[0]; document.getElementById('step-name').style.display = 'none'; if(!_all[_user].password) document.getElementById('step-first-set').style.display = 'block'; else document.getElementById('step-auth').style.display = 'block'; }
   function setPassword() { const p = document.getElementById('first-pwd').value; if(p.length !== 4) return alert("請設4位數字"); _db.ref(`students/${_user}`).update({ password: p }); renderUser(); }
@@ -305,22 +304,21 @@
   function renderUser() {
     const s = _all[_user]; const debt = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); const h = s.history?Object.values(s.history).reverse():[];
     document.getElementById('student-login').style.display = 'none';
-    document.getElementById('student-info').innerHTML = `<div class="login-card" style="text-align:center;"><div style="font-size:30px; font-weight:bold; color:var(--gold-main);">${s.name}</div><div style="font-size:90px; font-weight:900; margin:10px 0; color:var(--accent-red);">$${debt}</div><div class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">基金：${s.fundPaid?'已繳清':'未繳'}</div></div><div style="margin-top:30px; font-weight:bold; color:var(--gold-light); font-size:26px; text-align:center;">📜 公演帳目細項紀錄</div>` + h.map(i => `<div style="padding:20px 0; border-bottom:1px solid #333; font-size:22px; display:flex; justify-content:space-between;"><span><b>${i.type}</b>${i.note?' <br><small style="color:#888;">'+i.note+'</small>':''}</span><span style="text-align:right; color:var(--gold-light);">${i.amt?'$'+i.amt:''}</span></div>`).join('');
+    document.getElementById('student-info').innerHTML = `<div class="login-card" style="text-align:center;"><div style="font-size:30px; font-weight:bold; color:var(--gold-main);">${s.name}</div><div style="font-size:90px; font-weight:900; margin:10px 0; color:var(--accent-red);">$${debt}</div><div class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">基金：${s.fundPaid?'已繳清':'未繳'}</div><div style="margin-top:15px; color:var(--gold-light);">免死金牌剩餘：${s.leaveQuota||0} 面</div></div><div style="margin-top:30px; font-weight:bold; color:var(--gold-light); font-size:26px; text-align:center;">📜 帳目細項</div>` + h.map(i => `<div style="padding:20px 0; border-bottom:1px solid #333; font-size:22px; display:flex; justify-content:space-between;"><span><b>${i.type}</b>${i.note?' <br><small style="color:#888;">'+i.note+'</small>':''}</span><span style="text-align:right; color:var(--gold-light);">${i.amt?'$'+i.amt:''}</span></div>`).join('');
     document.getElementById('student-info').style.display = 'block';
   }
   function openModal(id) { _currentModalId = id; document.getElementById('modal-name').innerText = `${_all[id].no}. ${_all[id].name}`; updateModalContent(id); document.getElementById('detail-modal').style.display = 'block'; }
-  function updateModalContent(id) { const s = _all[id]; const debt = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); document.getElementById('modal-body').innerHTML = `<div style="text-align:center;"><div style="font-size:70px; font-weight:900; color:var(--accent-red);">$${debt}</div></div><div style="margin-top:20px; font-size:20px; line-height:1.6;">基金：${s.fundPaid?'✅已繳':'❌未繳'}<br>剩餘機會：${s.leaveQuota||0}次</div>`; const h = s.history?Object.values(s.history).reverse():[]; document.getElementById('modal-history').innerHTML = h.map(i => `<div style="padding:15px 0; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;"><span><b style="color:var(--gold-main)">${i.type}</b><br><small style="color:#888;">${i.time}</small></span><span style="text-align:right; color:var(--gold-light);">$${i.amt||0}</span></div>`).join('') || '無紀錄'; }
+  function updateModalContent(id) { const s = _all[id]; const debt = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); document.getElementById('modal-body').innerHTML = `<div style="text-align:center;"><div style="font-size:70px; font-weight:900; color:var(--accent-red);">$${debt}</div></div><div style="margin-top:20px; font-size:20px; line-height:1.6;">基金：${s.fundPaid?'✅已繳':'❌未繳'}<br>免死金牌：${s.leaveQuota||0}面</div>`; const h = s.history?Object.values(s.history).reverse():[]; document.getElementById('modal-history').innerHTML = h.map(i => `<div style="padding:15px 0; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;"><span><b style="color:var(--gold-main)">${i.type}</b><br><small style="color:#888;">${i.time}</small></span><span style="text-align:right; color:var(--gold-light);">$${i.amt||0}</span></div>`).join('') || '無紀錄'; }
   function closeModal() { document.getElementById('detail-modal').style.display='none'; _currentModalId=null; }
   function manualAddFineFromModal() { const amt = prompt("金額："); const r = prompt("原因："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ totalFine:(_all[_currentModalId].totalFine||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type: r, amt: parseInt(amt), time: new Date().toLocaleDateString() }); } }
   function setPropFromModal() { const amt = prompt("金額："); const note = prompt("說明："); if(amt) _db.ref(`students/${_currentModalId}`).update({ propFine:parseInt(amt), propNote:note }); }
   function adminPaidFromModal() { const amt = prompt("收錢："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ paidAmt:(_all[_currentModalId].paidAmt||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type: "收訖現金", amt: parseInt(amt), time: new Date().toLocaleDateString() }); } }
-  function adminDeduct(id, target) { const s = _all[id]; const q = s.leaveQuota || 2; if (q <= target) { if(confirm("取消折抵？")) _db.ref(`students/${id}`).update({ leaveQuota: q + 1, totalFine: (s.totalFine || 0) + 100 }); } else { if(confirm("確定折抵 $100？")) { _db.ref(`students/${id}`).update({ leaveQuota: q - 1, totalFine: Math.max(0, (s.totalFine || 0) - 100) }); _db.ref(`students/${id}/history`).push({ type: "機會折抵", amt: -100, time: new Date().toLocaleDateString() }); } } }
+  function adminDeduct(id, target) { const s = _all[id]; const q = s.leaveQuota || 2; if (q <= target) { if(confirm("取消使用金牌？")) _db.ref(`students/${id}`).update({ leaveQuota: q + 1, totalFine: (s.totalFine || 0) + 100 }); } else { if(confirm("確定使用一面【免死金牌】幫 " + s.name + " 抵銷 100 元？")) { _db.ref(`students/${id}`).update({ leaveQuota: q - 1, totalFine: Math.max(0, (s.totalFine || 0) - 100) }); _db.ref(`students/${id}/history`).push({ type: "使用免死金牌", amt: -100, time: new Date().toLocaleDateString() }); } } }
   function toggleFund(id, cur) { _db.ref(`students/${id}`).update({ fundPaid: !cur }); }
   function go(p, el) { ['list', 'att', 'rep', 'set'].forEach(i => document.getElementById('pane-' + i).style.display = 'none'); document.getElementById('pane-' + p).style.display = 'block'; document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); if (el) el.classList.add('active'); if (p === 'att') renderAttGrid(); }
   function showLock() { document.getElementById('lock-overlay').style.display='flex'; _pin=""; }
   function press(v) { if(v==='del') _pin=_pin.slice(0,-1); else if(_pin.length<4) _pin+=v; const ds=document.getElementById('pwd-dots').children; for(let i=0; i<4; i++) ds[i].style.background=i<_pin.length?'var(--gold-main)':'none'; if(_pin.length===4) { if(_pin===_mPin) { document.getElementById('lock-overlay').style.display='none'; document.getElementById('view-student').style.display='none'; document.getElementById('view-admin').style.display='block'; go('list'); } else { alert("錯誤"); _pin=""; } } }
-  function renderFullReport() { const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99)); let total = 0; let html = ""; sorted.forEach(([id, s]) => { if(s.no === 42) html += `<div style="text-align:center; color:var(--gold-main); font-weight:900; margin:15px 0;">演三莊名單</div>`; const fund = (s.fundPaid?0:1300); const d = (s.totalFine||0) + (s.propFine||0) + fund - (s.paidAmt||0); total += d; html += `<div style="display:flex; justify-content:space-between; padding:15px 0; border-bottom:1px solid #222;"><span>${s.no}. ${s.name}</span><span style="color:${d>0?'var(--accent-red)':'#666'}">$${d}</span></div>`; }); document.getElementById('full-report-list').innerHTML = html; document.getElementById('total-sum-badge').innerText = '$' + total; }
-  function setNote(e, id) { e.stopPropagation(); const n = prompt("內容：", _attData[id].note); if(n!==null) { _attData[id].note = n; renderAttGrid(); } }
+  function setNote(e, id) { e.stopPropagation(); const n = prompt("輸入註記內容：", _attData[id].note); if(n!==null) { _attData[id].note = n; renderAttGrid(); } }
 </script>
 </body>
 </html>
