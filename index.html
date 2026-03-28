@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>112年莊敬音樂科畢業公演管理系統 V1.8</title>
+<title>112年莊敬音樂科畢業公演管理系統 V1.9</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -38,6 +38,7 @@
   
   input { width: 100%; padding: 18px; border-radius: 15px; border: 1px solid rgba(212, 175, 55, 0.4); background: rgba(0,0,0,0.5); color: #fff; font-size: 18px; margin-bottom: 15px; text-align: center; }
   .help-text { font-size: 12px; color: #888; margin-top: 5px; line-height: 1.4; }
+  .section-label { font-size: 14px; color: var(--gold-main); font-weight: bold; margin-bottom: 10px; display: block; }
 </style>
 </head>
 <body>
@@ -45,34 +46,43 @@
   <div class="app-container" id="view-student">
     <div class="header"><div class="main-title">112年莊敬高職音樂科<br>畢業公演</div></div>
     <div id="student-login" class="main-card">
-        <div style="text-align:center; color:var(--gold-light); margin-bottom:15px; font-size:14px;">— 同學查詢系統 —</div>
-        <input type="text" id="stu-name" placeholder="請輸入您的姓名">
-        <button class="btn-gold" onclick="searchStudent()">登入並查看欠費明細</button>
-        <div class="help-text" style="text-align:center;">輸入姓名後即可查看目前所有罰款、道具費與老師註記。</div>
+        <span class="section-label">同學端查詢系統</span>
+        <input type="text" id="stu-name" placeholder="請輸入姓名">
+        <button class="btn-gold" onclick="searchStudent()">登入並查看紀錄</button>
+        <p class="help-text">登入後可查看剩餘折抵次數、畢業基金狀態、道具費明細及老師註記。</p>
     </div>
     <div id="student-info" style="display:none"></div>
-    <div style="margin-top:auto; text-align:center; padding:40px 0; color:#333; font-size:12px;" onclick="showLock()">SYSTEM ADMIN</div>
+    <div style="margin-top:auto; text-align:center; padding:40px 0; color:#333; font-size:12px;" onclick="showLock()">後台管理入口</div>
   </div>
 
   <div class="app-container admin-panel" id="view-admin">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-        <h2 style="font-size:24px; color:var(--gold-main); margin:0;">後台管理</h2>
+        <h2 style="font-size:24px; color:var(--gold-main); margin:0;">管理系統</h2>
         <button onclick="location.reload()" style="background:none; border:1px solid #555; color:#888; border-radius:10px; padding:5px 12px;">登出</button>
     </div>
     
-    <div id="pane-list"><div id="h-l"></div></div> 
+    <div id="pane-list">
+        <div class="main-card" style="padding:15px; border-color:var(--success);">
+            <span class="section-label">快速新增同學</span>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="new-stu-name" placeholder="輸入姓名" style="margin-bottom:0; flex:2;">
+                <button onclick="addNewStudent()" style="flex:1; background:var(--success); color:#fff; border:none; border-radius:12px; font-weight:bold;">新增</button>
+            </div>
+            <p class="help-text">若名單中沒有您的名字，請在此手動新增一次。</p>
+        </div>
+        <div id="h-l"></div>
+    </div> 
 
     <div id="pane-att" style="display:none">
-        <div style="background:var(--glass); padding:10px; border-radius:10px; font-size:12px; color:var(--gold-light); margin-bottom:15px; text-align:center;">
-          點擊圖示切換：✅出席 / ⏰遲到100 / 🍃核准請假 / ❌缺席
-        </div>
+        <span class="section-label">今日排練點名</span>
+        <p class="help-text" style="margin-bottom:15px;">點擊姓名切換：✅出席 / ⏰遲到 / 🍃核假 / ❌缺席</p>
         <div id="att-grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;"></div>
-        <button class="btn-gold" style="margin-top:30px" onclick="submitAtt()">💾 儲存點名紀錄</button>
+        <button class="btn-gold" style="margin-top:30px" onclick="submitAtt()">💾 確認並儲存點名</button>
     </div>
 
     <div id="pane-rep" style="display:none">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h3 style="margin:0; color:var(--gold-light);">全班欠費報表 (含基金)</h3>
+            <h3 style="margin:0; color:var(--gold-light);">總欠費排行榜</h3>
             <div id="total-sum-badge" style="background:var(--accent-red); padding:8px 15px; border-radius:15px; font-weight:bold;">$0</div>
         </div>
         <div class="main-card" style="padding:15px; height: 50vh; overflow-y: auto;"><div id="full-report-list"></div></div>
@@ -80,8 +90,8 @@
 
     <div id="pane-set" style="display:none">
         <div class="main-card">
-            <h3 style="color:var(--gold-main);">帳目大歸零</h3>
-            <p style="font-size:14px; color:#888; margin-bottom:20px;">此操作將會：<br>1. 清除所有遲到與道具罰金<br>2. 清空所有已繳現金紀錄<br>3. 恢復所有人 2 次請假折抵機會<br>4. 將所有人畢業基金設為「未繳」</p>
+            <h3 style="color:var(--gold-main);">帳目大清算</h3>
+            <p style="font-size:14px; color:#888; margin-bottom:20px;">這會清除所有人目前所有的罰款與繳費紀錄，並將請假機會恢復為 2 次。名單會保留。</p>
             <button class="btn-gold" onclick="resetAllAccounting()" style="background:var(--accent-red); color:#fff;">🛑 確定全部重設</button>
         </div>
     </div>
@@ -105,21 +115,33 @@
   </div>
 
 <script>
-  const APP_VERSION = "1.8";
+  const APP_VERSION = "1.9";
   const _c = { apiKey: "AIzaSyC_6aza1KH8GXxUbYBraK7wcqPrSUSF-Ns", authDomain: "jjvsmusic.firebaseapp.com", databaseURL: "https://jjvsmusic-default-rtdb.firebaseio.com", projectId: "jjvsmusic", storageBucket: "jjvsmusic.appspot.com", messagingSenderId: "754846318347", appId: "1:754846318347:web:865668e27c1529688432a5" };
   firebase.initializeApp(_c); const _db = firebase.database();
   let _all = {}, _user = null, _pin = "", _mPin = "0902", _attData = {};
 
-  // 已加入 蕭旭成 同學
-  const MUSIC_STU = ["毛語程","林叡成","田宇紘","吳昆達","吳宥良","黃崇恩","林宏澤","金品澔","劉宸昀","蔡呈樂","蘇瑞吾","梁之凡","蔡宗佑","黃穩達","馮康維","倪秉澤","廖敏君","劉慶霈","蔡慧琳","鄭淳融","魏宜宸","徐婉瑜","安兪臻","江岑君","池宛昕","李曉萍","周玄禮","王以昕","林祐立","邱詩涵","胡云珊","蔡逸宣","高慧君","張路淇","陳芃瑾","陳雨彤","陳宥安","陳圓卿","傅克諳","曾妘湘","蕭旭成"];
-
   _db.ref('students').on('value', s => {
       _all = s.val() || {};
-      if(Object.keys(_all).length === 0) {
-          MUSIC_STU.forEach((n, index) => _db.ref('students').push({ no: index + 1, name: n, totalFine: 0, propFine: 0, paidAmt: 0, leaveQuota: 2, fundPaid: false }));
-      }
       renderAdminList(); renderFullReport(); if(_user) renderUser();
   });
+
+  // 手動新增學生函式
+  function addNewStudent() {
+      const name = document.getElementById('new-stu-name').value.trim();
+      if(!name) return alert("請輸入姓名");
+      const nextNo = Object.keys(_all).length + 1;
+      _db.ref('students').push({ 
+          no: nextNo, 
+          name: name, 
+          totalFine: 0, 
+          propFine: 0, 
+          paidAmt: 0, 
+          leaveQuota: 2, 
+          fundPaid: false 
+      });
+      document.getElementById('new-stu-name').value = "";
+      alert(name + " 已成功加入名單！");
+  }
 
   function renderAdminList() {
     const l = document.getElementById('h-l'); if(!l) return;
@@ -131,21 +153,20 @@
       return `
       <div class="list-item">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <b>${s.no}. ${s.name}</b>
+          <b style="font-size:18px;">${s.no}. ${s.name}</b>
           <span class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}" onclick="toggleFund('${id}', ${s.fundPaid})">
             基金：${s.fundPaid?'已繳':'未繳($1300)'}
           </span>
         </div>
-        <div class="help-text">點擊下方方格扣除機會並折抵 $100 遲到費：</div>
         <div class="quota-box-container">
           <div class="quota-box ${q <= 1 ? 'used' : ''}" onclick="adminDeduct('${id}', 1)">${q <= 1 ? '✔' : ''}</div>
           <div class="quota-box ${q <= 0 ? 'used' : ''}" onclick="adminDeduct('${id}', 0)">${q <= 0 ? '✔' : ''}</div>
           <span style="margin-left:auto; color:var(--accent-red); font-weight:bold;">應繳: $${debt}</span>
         </div>
         <div style="display:flex; gap:8px; margin-top:12px;">
-          <button onclick="setProp('${id}')" style="flex:1; padding:10px; border-radius:10px; background:#222; color:#fff; font-size:11px; border:1px solid #444;">道具費/細項</button>
+          <button onclick="setProp('${id}')" style="flex:1; padding:10px; border-radius:10px; background:#222; color:#fff; font-size:11px; border:1px solid #444;">道具明細</button>
           <button onclick="quickAddFine('${id}', 100, '遲到罰款')" style="flex:1; padding:10px; border-radius:10px; background:var(--accent-red); color:#fff; font-size:11px; border:none;">遲到+100</button>
-          <button onclick="adminPaid('${id}')" style="flex:1; padding:10px; border-radius:10px; background:var(--gold-main); color:#000; font-weight:bold; font-size:11px; border:none;">收現金</button>
+          <button onclick="adminPaid('${id}')" style="flex:1; padding:10px; border-radius:10px; background:var(--gold-main); color:#000; font-weight:bold; font-size:11px; border:none;">收現</button>
         </div>
       </div>`;
     }).join('');
@@ -162,20 +183,19 @@
         <div style="font-size:22px; font-weight:bold; color:var(--gold-main);">${s.name} 同學</div>
         <div style="font-size:56px; font-weight:900; margin:15px 0; color:${debt>0?'var(--accent-red)':'var(--gold-main)'};">$${debt}</div>
         <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-           <div class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">基金：${s.fundPaid?'已繳清':'未繳($1300)'}</div>
-           <div class="status-tag" style="background:#444">請假折抵剩餘：${q} 次</div>
+           <div class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">畢業基金：${s.fundPaid?'已繳清':'未繳($1300)'}</div>
+           <div class="status-tag" style="background:#444">折抵機會剩餘：${q} 次</div>
         </div>
-        ${s.propFine ? `<div style="margin-top:15px; font-size:14px; color:#aaa; border-top:1px solid #333; padding-top:10px;"><b>道具費明細 ($${s.propFine})</b><br>${s.propNote || '無備註'}</div>` : ''}
+        ${s.propFine ? `<div style="margin-top:15px; font-size:14px; color:#aaa; border-top:1px solid #333; padding-top:10px;"><b>道具明細 ($${s.propFine})</b><br>${s.propNote || '無註記'}</div>` : ''}
       </div>
-      <div style="margin:20px 0 10px; font-weight:bold; color:var(--gold-light);">個人帳目與老師註記紀錄：</div>
+      <div style="margin:20px 0 10px; font-weight:bold; color:var(--gold-light);">個人帳目紀錄與老師叮嚀：</div>
     ` + h.map(i => `<div style="padding:12px 0; border-bottom:1px solid #222; font-size:14px; display:flex; justify-content:space-between;">
-        <span>${i.type}${i.note ? ' <br><small style="color:var(--gold-main)">註記：'+i.note+'</small>' : ''}</span>
+        <span>${i.type}${i.note ? ' <br><small style="color:var(--gold-main)">註：'+i.note+'</small>' : ''}</span>
         <span style="text-align:right;">${i.amt?'$'+i.amt:''}<br><small style="color:#444">${i.time}</small></span>
       </div>`).join('');
     document.getElementById('student-info').style.display = 'block';
   }
 
-  // 管理功能
   function adminDeduct(id, target) {
       const s = _all[id];
       const q = s.leaveQuota !== undefined ? s.leaveQuota : 2;
@@ -185,7 +205,7 @@
               _db.ref(`students/${id}/history`).push({ type: "取消機會折抵", amt: 100, time: new Date().toLocaleDateString() });
           }
       } else {
-          if(confirm(`消耗 ${s.name} 一次機會折抵 $100 遲到費？`)) {
+          if(confirm(`消耗一次機會幫 ${s.name} 折抵 $100？`)) {
               _db.ref(`students/${id}`).update({ leaveQuota: q - 1, totalFine: Math.max(0, (s.totalFine || 0) - 100) });
               _db.ref(`students/${id}/history`).push({ type: "機會折抵遲到", amt: -100, time: new Date().toLocaleDateString() });
           }
@@ -195,7 +215,7 @@
   function setProp(id) { 
       const amt = prompt("輸入道具費金額：", _all[id].propFine || 0);
       if(amt === null) return;
-      const note = prompt("請詳細描述費用項目(例如:戲服,武器,佈景)：", _all[id].propNote || "");
+      const note = prompt("輸入明細(戲服、道具、佈景)：", _all[id].propNote || "");
       _db.ref(`students/${id}`).update({ propFine: parseInt(amt), propNote: note });
   }
 
@@ -205,10 +225,10 @@
   }
 
   function adminPaid(id) {
-      const amt = prompt("收訖現金金額：");
+      const amt = prompt("收到現金額：");
       if(amt > 0) {
           _db.ref(`students/${id}`).update({ paidAmt: (_all[id].paidAmt||0) + parseInt(amt) });
-          _db.ref(`students/${id}/history`).push({ type: "現金繳費", amt: amt, time: new Date().toLocaleDateString() });
+          _db.ref(`students/${id}/history`).push({ type: "現金收訖", amt: amt, time: new Date().toLocaleDateString() });
       }
   }
 
@@ -220,11 +240,11 @@
       _attData[id] = { status: 'present', note: '' };
       return `<div id="at-${id}" onclick="tk('${id}')" style="background:rgba(255,255,255,0.05); padding:12px 5px; border-radius:15px; text-align:center; font-size:12px;">
         ${s.name}<br><span id="icon-${id}" style="font-size:24px;">✅</span><br>
-        <button onclick="setNote(event, '${id}')" style="font-size:10px; background:#444; color:#fff; border:none; border-radius:5px; margin-top:5px; padding:2px 8px;">註記</button>
+        <button onclick="setNote(event, '${id}')" style="font-size:10px; background:#444; color:#fff; border:none; border-radius:5px; margin-top:5px; padding:2px 8px;">備註</button>
       </div>`;
     }).join('');
   }
-  window.setNote = (e, id) => { e.stopPropagation(); const n = prompt("請輸入老師註記內容："); if(n!==null) _attData[id].note = n; }
+  window.setNote = (e, id) => { e.stopPropagation(); const n = prompt("輸入備註(例如:病假、公假)："); if(n!==null) _attData[id].note = n; }
   window.tk = (id) => {
       const sMap = { 'present':['late','⏰','遲100'], 'late':['leave','🍃','核假'], 'leave':['absent','❌','缺席'], 'absent':['present','✅','出席'] };
       const cur = _attData[id].status;
@@ -235,10 +255,10 @@
   function submitAtt() {
       const t = new Date().toLocaleDateString();
       Object.entries(_attData).forEach(([id, data]) => {
-          if(data.status === 'late') quickAddFine(id, 100, "點名遲到");
-          if(data.note) _db.ref(`students/${id}/history`).push({ type: "老師註記", note: data.note, time: t });
+          if(data.status === 'late') quickAddFine(id, 100, "排練遲到");
+          if(data.note) _db.ref(`students/${id}/history`).push({ type: "點名備註", note: data.note, time: t });
       });
-      alert("儲存完成，罰款與註記已更新！"); go('list');
+      alert("儲存完成！"); go('list');
   }
 
   function go(p, el) { 
@@ -256,7 +276,7 @@
     listDiv.innerHTML = sorted.map(([id, s]) => {
       const fundD = s.fundPaid ? 0 : 1300;
       const d = (s.totalFine||0) + (s.propFine||0) + fundD - (s.paidAmt||0); total += d;
-      return `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #222; font-size:14px;"><span>${s.no}. ${s.name} ${s.fundPaid?'':'(未繳基金)'}</span><span style="color:${d>0?'var(--accent-red)':'#666'}">$${d}</span></div>`;
+      return `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #222; font-size:14px;"><span>${s.no}. ${s.name} ${s.fundPaid?'':'(欠基金)'}</span><span style="color:${d>0?'var(--accent-red)':'#666'}">$${d}</span></div>`;
     }).join('');
     document.getElementById('total-sum-badge').innerText = '$' + total;
   }
@@ -271,11 +291,11 @@
   }
 
   function resetAllAccounting() { 
-      if(confirm("確定帳目全部重設？\n這將歸零錢財與恢復機會，但保留學生名單。")) { 
+      if(confirm("確定全部帳目歸零？名單將會保留。")) { 
           Object.keys(_all).forEach(id => {
               _db.ref(`students/${id}`).update({ totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false, propNote:"", history:null });
           });
-          alert("所有帳目已初始化！"); 
+          alert("數據已全數歸零！"); 
       } 
   }
 
