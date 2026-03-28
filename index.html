@@ -23,17 +23,11 @@
     appId: "1:754846318347:web:865668e27c1529688432a5"
   };
 
-  // 初始化 Firebase
-  const app = firebase.initializeApp(firebaseConfig);
+  // 初始化 Firebase 並強制關閉所有本地儲存（避免無痕模式擋掉）
+  firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  const DEFAULT_NAMES = [
-    '毛語程','林叡成','田宇紘','吳昆達','吳宥良','黃崇恩','林宏澤','金品澔',
-    '劉宸昀','蔡呈樂','蘇瑞吾','梁之凡','蔡宗佑','黃穩達','馮康維','倪秉澤',
-    '廖敏君','劉慶霈','蔡慧琳','鄭淳融','魏宜宸','徐婉瑜','安兪臻','江岑君',
-    '池宛昕','李曉萍','周玄禮','王以昕','林祐立','邱詩涵','胡云珊','蔡逸宣',
-    '高慧君','張路淇','陳芃瑾','陳雨彤','陳宥安','陳圓卿','傅克諳','曾妘湘'
-  ];
+  const DEFAULT_NAMES = ['毛語程','林叡成','田宇紘','吳昆達','吳宥良','黃崇恩','林宏澤','金品澔','劉宸昀','蔡呈樂','蘇瑞吾','梁之凡','蔡宗佑','黃穩達','馮康維','倪秉澤','廖敏君','劉慶霈','蔡慧琳','鄭淳融','魏宜宸','徐婉瑜','安兪臻','江岑君','池宛昕','李曉萍','周玄禮','王以昕','林祐立','邱詩涵','胡云珊','蔡逸宣','高慧君','張路淇','陳芃瑾','陳雨彤','陳宥安','陳圓卿','傅克諳','曾妘湘'];
 
   const FEE = 100;
   let students = {};
@@ -42,7 +36,6 @@
   let currentStudentId = null;
   const MASTER_KEY = "0902"; 
 
-  // 工具函式
   function show(id){ document.getElementById(id).style.display='block'; }
   function hide(id){ document.getElementById(id).style.display='none'; }
   function showToast(msg){ 
@@ -51,23 +44,24 @@
     setTimeout(()=>t.classList.remove('show'),2000); 
   }
 
-  // 初始化資料
+  // 核心：連線並監聽
   function initApp() {
     db.ref('students').on('value', snap => {
       students = snap.val() || {};
       if (isAdmin) { renderAdminList(); renderReport(); }
+      console.log("資料同步成功");
     }, (err) => {
-      console.error("Firebase Error:", err);
-      alert("連線失敗，請檢查網路或不要使用特定隱私過濾器");
+      alert("資料庫連線失敗，請嘗試關閉擋廣告插件或重新整理。");
     });
   }
 
   // 學生搜尋
   window.searchName = function() {
-    const name = document.getElementById('student-name-input').value.trim();
+    const nameInput = document.getElementById('student-name-input');
+    const name = nameInput.value.trim();
     if(!name) return;
     const found = Object.entries(students).find(([,s]) => s.name === name);
-    if (!found) { alert("查無此人，請檢查姓名是否正確"); return; }
+    if (!found) { alert("查無此人，請檢查姓名是否有誤。"); return; }
     
     currentStudentId = found[0];
     const s = found[1];
@@ -77,17 +71,17 @@
     const promptText = document.getElementById('login-prompt');
     const loginBtn = document.getElementById('login-action-btn');
     if (!s.password) {
-      promptText.innerHTML = `<span style="color:#30d158">首次查詢</span><br>請設定您的 4 位數密碼：`;
+      promptText.innerHTML = `<span style="color:#30d158">首次查詢</span><br>請設定 4 位數查詢密碼：`;
       loginBtn.textContent = "設定並進入";
     } else {
-      promptText.innerHTML = `歡迎回來，<b>${s.name}</b><br>請輸入密碼：`;
+      promptText.innerHTML = `你好，<b>${s.name}</b><br>請輸入密碼：`;
       loginBtn.textContent = "驗證進入";
     }
   };
 
   window.handleStudentLogin = function() {
     const pwdInput = document.getElementById('student-pwd-input').value.trim();
-    if (pwdInput.length < 4) { alert("請輸入 4 位數"); return; }
+    if (pwdInput.length < 4) { alert("密碼請輸入 4 位數"); return; }
     const s = students[currentStudentId];
     if (!s.password) {
       db.ref(`students/${currentStudentId}`).update({ password: pwdInput }).then(()=>renderStudentData(currentStudentId));
@@ -102,18 +96,18 @@
     const s = students[id];
     hide('student-login-area');
     show('student-data-area');
-    const owed = Math.max(0, s.lateCount - s.paidCount) * FEE;
+    const owed = Math.max(0, (s.lateCount||0) - (s.paidCount||0)) * FEE;
     const hist = s.history ? Object.values(s.history).reverse() : [];
     document.getElementById('student-data-area').innerHTML = `
       <div class="card main-card">
         <div class="card-top"><div><div class="student-name">${s.name}</div></div>
-        <div class="${owed===0?'badge-ok':'badge-debt'}">${owed===0?'模範生':'欠 $'+owed}</div></div>
+        <div class="${owed===0?'badge-ok':'badge-debt'}">${owed===0?'模範生 ✅':'待繳 $'+owed}</div></div>
       </div>
       <div class="section-label">日期紀錄</div>
-      ${hist.map(h=>`<div class="hist-item"><span>${h.type==='late'?'⏰ 遲到':h.type==='paid'?'💰 繳費':h.type==='adjust'?'📝 調整':'✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}`;
+      ${hist.map(h=>`<div class="hist-item"><span>${h.type==='late'?'⏰ 遲到':h.type==='paid'?'💰 繳費':h.type==='adjust'?'📝 調整':h.type==='absent'?'❌ 缺席':h.type==='leave'?'🍃 請假':'✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}`;
   }
 
-  // 管理端邏輯
+  // 管理端
   let pin = "";
   window.pinInput = (n) => { 
     if(pin.length<4) pin+=n; 
@@ -121,7 +115,7 @@
     if(pin.length===4) setTimeout(()=>{
       if(pin === MASTER_KEY){ 
         isAdmin=true; hide('lock-screen'); show('admin-app'); showTab('list'); 
-      } else { alert("密碼錯誤"); pin=""; updateDots(); }
+      } else { alert("管理密碼錯誤"); pin=""; updateDots(); }
     }, 200);
   };
   window.pinDel = () => { pin=pin.slice(0,-1); updateDots(); };
@@ -135,7 +129,7 @@
 
   window.renderAdminList = function() {
     document.getElementById('admin-list').innerHTML = Object.entries(students).map(([id,s])=>{
-      const owed = Math.max(0, s.lateCount - s.paidCount) * FEE;
+      const owed = Math.max(0, (s.lateCount||0) - (s.paidCount||0)) * FEE;
       return `<div class="card"><div class="card-top"><div>${s.name}</div><div class="badge-debt">$${owed}</div></div>
       <div style="display:flex;gap:5px"><button onclick="quickAction('${id}','paid')" class="btn-s">收錢</button>
       <button onclick="quickAction('${id}','late')" class="btn-s">+遲</button>
@@ -144,18 +138,18 @@
   };
 
   window.adjustBalance = function(id) {
-    const amt = prompt("輸入該生當前「應繳」總金額：");
-    if(amt !== null){
+    const amt = prompt("輸入總欠費金額 (100 為一單位)：");
+    if(amt !== null && !isNaN(amt)){
       db.ref(`students/${id}`).update({ lateCount: Math.ceil(amt/FEE), paidCount: 0 });
       db.ref(`students/${id}/history`).push({ type: 'adjust', time: new Date().toLocaleDateString() });
     }
   };
 
   window.quickAction = function(id, type) {
-    const s = students[id];
-    if(type==='paid' && s.paidCount < s.lateCount) db.ref(`students/${id}`).update({ paidCount: s.paidCount+1 });
-    if(type==='late') db.ref(`students/${id}`).update({ lateCount: s.lateCount+1 });
-    db.ref(`students/${id}/history`).push({ type: type, time: new Date().toLocaleDateString() });
+    const s = students[id]; const time = new Date().toLocaleDateString();
+    if(type==='paid' && (s.paidCount||0) < (s.lateCount||0)) db.ref(`students/${id}`).update({ paidCount: (s.paidCount||0)+1 });
+    if(type==='late') db.ref(`students/${id}`).update({ lateCount: (s.lateCount||0)+1 });
+    db.ref(`students/${id}/history`).push({ type: type, time: time });
   };
 
   window.renderAttendGrid = function() {
@@ -183,88 +177,58 @@
       db.ref(`students/${id}`).update(up);
       db.ref(`students/${id}/history`).push({ type: status, time: time });
     });
-    showToast("紀錄成功"); showTab('list');
+    showToast("儲存完成"); showTab('list');
   };
 
   window.renderReport = () => {
-    document.getElementById('r-total').textContent = '$' + Object.values(students).reduce((a,s)=> a + Math.max(0, s.lateCount - s.paidCount)*FEE, 0);
+    document.getElementById('r-total').textContent = '$' + Object.values(students).reduce((a,s)=> a + Math.max(0, (s.lateCount||0) - (s.paidCount||0))*FEE, 0);
   };
 
   window.copyList = () => {
-    let t = "【罰款催繳】\n";
+    let t = "【罰款通知】\n";
     Object.values(students).forEach(s => { 
-      const owed = Math.max(0, s.lateCount - s.paidCount)*FEE; 
+      const owed = Math.max(0, (s.lateCount||0) - (s.paidCount||0))*FEE; 
       if(owed>0) t += `📌 ${s.name}：$${owed}\n`; 
     });
     navigator.clipboard.writeText(t).then(()=>showToast("已複製"));
   };
 
-  window.resetData = () => { if(prompt("密碼?")==="0902") db.ref('students').remove(); location.reload(); };
+  window.resetData = () => { if(prompt("管理密碼?")==="0902") db.ref('students').remove(); location.reload(); };
   window.goLock = () => location.reload();
 
-  window.onload = initApp;
+  // 強制載入最新
+  window.addEventListener('load', initApp);
 </script>
 
 <style>
   :root{--bg:#000;--card:#1c1c1e;--accent:#ff6b35;--text:#fff}
-  body{background:var(--bg);color:var(--text);font-family:sans-serif;margin:0}
-  .container{padding:20px;max-width:500px;margin:0 auto}
-  #lock-screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100}
+  body{background:var(--bg);color:var(--text);font-family:sans-serif;margin:0;overscroll-behavior:none}
+  .container{padding:20px;max-width:500px;margin:0 auto;padding-bottom:100px}
+  #lock-screen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200}
   .dot{width:12px;height:12px;border:2px solid #333;border-radius:50%;margin:10px}
   .dot.fill{background:var(--accent);border-color:var(--accent)}
-  .numpad{display:grid;grid-template-columns:repeat(3,80px);gap:15px}
-  .btn-n{width:70px;height:70px;border-radius:50%;background:#1c1c1e;color:#fff;border:none;font-size:24px}
-  .card{background:var(--card);border-radius:15px;padding:15px;margin-bottom:10px}
-  .card-top{display:flex;justify-content:space-between;font-weight:bold;margin-bottom:10px}
-  .badge-ok{background:#30d158;color:#000;padding:4px 8px;border-radius:5px;font-size:12px}
-  .badge-debt{background:var(--accent);padding:4px 8px;border-radius:5px;font-size:12px}
-  .btn-s{background:#30d158;border:none;padding:10px;border-radius:8px;font-weight:bold;cursor:pointer}
-  .att-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
-  .att-cell{background:#1c1c1e;padding:10px 2px;border-radius:8px;text-align:center;font-size:11px}
-  .bottom-nav{position:fixed;bottom:0;width:100%;max-width:500px;background:#1c1c1e;display:flex;padding:15px 0}
-  .nav-item{flex:1;text-align:center;font-size:12px}
-  input{width:100%;padding:12px;border-radius:10px;border:none;background:#1c1c1e;color:#fff;margin-bottom:10px}
-  #toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--accent);padding:10px 20px;border-radius:20px;opacity:0;transition:0.3s}
+  .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;width:280px}
+  .btn-n{width:75px;height:75px;border-radius:50%;background:#1c1c1e;color:#fff;border:none;font-size:24px;active{background:#3a3a3c}}
+  .card{background:var(--card);border-radius:15px;padding:15px;margin-bottom:10px;border:1px solid #2c2c2e}
+  .card-top{display:flex;justify-content:space-between;font-weight:bold;align-items:center}
+  .badge-ok{background:#30d158;color:#000;padding:4px 10px;border-radius:8px;font-size:12px}
+  .badge-debt{background:var(--accent);padding:4px 10px;border-radius:8px;font-size:12px}
+  .btn-s{background:#30d158;border:none;padding:12px;border-radius:10px;font-weight:bold;color:#000;flex:1}
+  .att-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .att-cell{background:#1c1c1e;padding:12px 2px;border-radius:10px;text-align:center;font-size:12px;border:1px solid #2c2c2e}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:500px;background:#1c1c1e;display:flex;padding:20px 0;border-top:1px solid #2c2c2e;z-index:100}
+  .nav-item{flex:1;text-align:center;font-size:12px;color:#8e8e93;active{color:var(--accent)}}
+  input{width:100%;padding:15px;border-radius:12px;border:none;background:#1c1c1e;color:#fff;margin-bottom:15px;font-size:16px;box-sizing:border-box}
+  #toast{position:fixed;top:30px;left:50%;transform:translateX(-50%);background:var(--accent);padding:10px 25px;border-radius:30px;opacity:0;transition:0.3s;font-weight:bold;z-index:300}
   #toast.show{opacity:1}
+  .hist-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #2c2c2e;font-size:14px}
+  .section-label{font-size:12px;color:#8e8e93;margin:20px 0 10px}
 </style>
 </head>
 <body>
   <div id="lock-screen">
-    <div style="font-size:50px">🎭</div>
-    <div style="display:flex;margin:20px"><div id="d0" class="dot"></div><div id="d1" class="dot"></div><div id="d2" class="dot"></div><div id="d3" class="dot"></div></div>
+    <div style="font-size:60px">🎭</div>
+    <div style="display:flex;margin:30px"><div id="d0" class="dot"></div><div id="d1" class="dot"></div><div id="d2" class="dot"></div><div id="d3" class="dot"></div></div>
     <div class="numpad">
       <button class="btn-n" onclick="pinInput(1)">1</button><button class="btn-n" onclick="pinInput(2)">2</button><button class="btn-n" onclick="pinInput(3)">3</button>
-      <button class="btn-n" onclick="pinInput(4)">4</button><button class="btn-n" onclick="pinInput(5)">5</button><button class="btn-n" onclick="btn-n" onclick="pinInput(6)">6</button>
-      <button class="btn-n" onclick="pinInput(7)">7</button><button class="btn-n" onclick="pinInput(8)">8</button><button class="btn-n" onclick="pinInput(9)">9</button>
-      <button class="btn-n" style="background:none"></button><button class="btn-n" onclick="pinInput(0)">0</button><button class="btn-n" onclick="pinDel()">⌫</button>
-    </div>
-    <button onclick="goStudent()" style="margin-top:30px;color:#0a84ff;background:none;border:none">👤 學生查詢入口</button>
-  </div>
-
-  <div id="student-screen" class="container" style="display:none">
-    <h2>個人查詢</h2>
-    <div id="student-search-bar">
-      <input type="text" id="student-name-input" placeholder="輸入姓名">
-      <button onclick="searchName()" style="width:100%;background:var(--accent);border:none;padding:12px;border-radius:10px;color:#fff">下一步</button>
-    </div>
-    <div id="student-login-area" style="display:none;text-align:center">
-      <p id="login-prompt"></p>
-      <input type="password" id="student-pwd-input" placeholder="4位密碼" inputmode="numeric">
-      <button onclick="handleStudentLogin()" id="login-action-btn" style="width:100%;padding:12px;background:var(--accent);border:none;border-radius:10px;color:#fff">進入</button>
-    </div>
-    <div id="student-data-area" style="display:none"></div>
-    <button onclick="goLock()" style="margin-top:30px;width:100%;background:none;border:none;color:#8e8e93">← 返回</button>
-  </div>
-
-  <div id="admin-app" class="container" style="display:none">
-    <div id="page-list"><h3>名冊</h3><div id="admin-list"></div></div>
-    <div id="page-attend" style="display:none"><h3>點名</h3><div id="att-grid" class="att-grid"></div><button onclick="saveAtt()" style="width:100%;margin-top:20px;padding:15px;background:var(--accent);border:none;border-radius:10px;color:#fff">💾 儲存</button></div>
-    <div id="page-report" style="display:none"><h3>報表</h3><div class="card"><div id="r-total" style="font-size:30px;color:var(--accent)">$0</div></div><button onclick="copyList()" style="width:100%;padding:15px;background:#0a84ff;border:none;border-radius:10px;color:#fff">📋 複製催繳名單</button></div>
-    <div id="page-settings" style="display:none"><h3>設定</h3><button onclick="resetData()" style="width:100%;padding:15px;background:#ff453a;border:none;border-radius:10px;color:#fff">🛑 重設資料庫</button><button onclick="goLock()" style="width:100%;margin-top:10px;padding:15px;background:#1c1c1e;border:none;border-radius:10px;color:#fff">🔒 登出</button></div>
-    <div class="bottom-nav">
-      <div class="nav-item" onclick="showTab('list')">👥名單</div><div class="nav-item" onclick="showTab('attend')">📅點名</div><div class="nav-item" onclick="showTab('report')">📊報表</div><div class="nav-item" onclick="showTab('settings')">⚙️設定</div>
-    </div>
-  </div>
-  <div id="toast"></div>
-</body>
-</html>
+      <button class="btn-n" onclick="pinInput(4)">4</button><button class="btn-n" onclick="pinInput(5)">5</button><button class="btn-n
