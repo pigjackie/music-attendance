@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>音演三莊公演管理系統 V3.4</title>
+<title>音演三莊公演管理系統 V3.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -23,62 +23,61 @@
   }
   
   body { display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
-  .app-container { flex: 1; width: 100%; padding: 30px 20px; display: flex; flex-direction: column; position: relative; z-index: 10; }
+  .app-container { flex: 1; width: 100%; padding: 20px; display: flex; flex-direction: column; position: relative; z-index: 10; }
   
   .deco-symbol { position: fixed; color: var(--gold-main); opacity: 0.12; pointer-events: none; z-index: 0; font-weight: 900; }
 
-  .header { text-align: center; margin: 40px 0 30px; }
+  .header { text-align: center; margin: 30px 0 20px; }
   .main-title { 
-    font-size: 42px; font-weight: 900; 
+    font-size: 38px; font-weight: 900; 
     background: linear-gradient(to bottom, var(--gold-light), var(--gold-main)); 
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
-    text-shadow: 0 5px 20px rgba(212, 175, 55, 0.4); line-height: 1.2; letter-spacing: 2px;
+    text-shadow: 0 5px 20px rgba(212, 175, 55, 0.4); line-height: 1.2;
   }
 
   .login-card { 
-    background: var(--glass); border-radius: 40px; padding: 50px 25px; 
+    background: var(--glass); border-radius: 40px; padding: 40px 25px; 
     border: 2px solid var(--gold-main); backdrop-filter: blur(20px); 
-    margin: 20px 0; position: relative; box-shadow: 0 30px 60px rgba(0,0,0,0.8); 
+    margin: 15px 0; box-shadow: 0 25px 50px rgba(0,0,0,0.8); 
   }
 
   input { 
-    width: 100%; padding: 25px; border-radius: 20px; 
+    width: 100%; padding: 22px; border-radius: 20px; 
     border: 3px solid var(--gold-main); background: rgba(0,0,0,0.7); 
-    color: #fff; font-size: 28px; font-weight: bold; margin-bottom: 25px; text-align: center; 
+    color: #fff; font-size: 26px; font-weight: bold; margin-bottom: 20px; text-align: center; 
   }
   .btn-gold { 
-    width: 100%; padding: 25px; border-radius: 20px; 
+    width: 100%; padding: 22px; border-radius: 20px; 
     background: linear-gradient(135deg, var(--gold-light), var(--gold-main)); 
-    color: #000; font-weight: 900; font-size: 28px; border: none; cursor: pointer; 
+    color: #000; font-weight: 900; font-size: 26px; border: none; cursor: pointer; 
   }
 
-  .admin-panel { display: none; padding-bottom: 180px; }
+  /* 管理員清單樣式 */
+  .admin-panel { display: none; padding-bottom: 160px; }
   .list-item { 
-    background: rgba(255,255,255,0.08); padding: 25px; border-radius: 30px; 
+    background: rgba(255,255,255,0.08); padding: 22px; border-radius: 30px; 
     margin-bottom: 15px; border-left: 10px solid var(--gold-main); 
   }
   .name-link { font-size: 34px; font-weight: 900; color: var(--gold-light); cursor: pointer; text-decoration: underline; }
 
-  .quota-row { display: flex; gap: 10px; margin-top: 15px; }
-  .quota-box-text { 
-    flex: 1; height: 65px; border: 2px solid var(--gold-main); border-radius: 15px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: bold; color: var(--gold-main); transition: 0.3s; cursor: pointer;
+  /* 點名區按鈕組 */
+  .att-grid-item { 
+    background: rgba(255,255,255,0.05); border: 1px solid #444; border-radius: 25px; 
+    padding: 20px 10px; margin-bottom: 20px;
   }
-  .quota-box-text.used { background: var(--gold-main); color: #000; }
-
-  .att-box { 
-    background: rgba(255,255,255,0.05); padding: 25px 5px; border-radius: 25px; 
-    text-align: center; border: 1px solid #444; transition: 0.2s;
+  .att-name { font-size: 28px; font-weight: 900; color: var(--gold-light); margin-bottom: 15px; display: block; text-align: center; }
+  .att-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .att-btn { 
+    padding: 12px 5px; border-radius: 12px; border: 1px solid #666; 
+    background: #222; color: #fff; font-size: 14px; font-weight: bold; cursor: pointer;
   }
-  .att-box.active-late { border-color: var(--accent-red); background: rgba(255, 59, 48, 0.1); }
-  .att-status-text { font-size: 26px; font-weight: 900; display: block; margin-top: 10px; }
-  .status-present { color: var(--success); }
-  .status-late10 { color: #f0ad4e; }
-  .status-late20 { color: #ff8c00; }
-  .status-late30 { color: #ff4500; }
-  .status-absent { color: var(--accent-red); font-weight: 900; text-decoration: underline; }
-  .status-leave { color: #5ac8fa; }
+  .att-btn.active { background: var(--gold-main); color: #000; border-color: var(--gold-light); }
+  .att-btn.danger { background: var(--accent-red); border-color: #ff8080; }
+  
+  .pending-sum { 
+    font-size: 24px; font-weight: 900; color: var(--gold-main); 
+    text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px dashed #555;
+  }
 
   .nav-bar { 
     position: fixed; bottom: 0; left: 0; width: 100%; height: 95px;
@@ -87,19 +86,13 @@
   }
   .nav-item { flex: 1; text-align: center; font-size: 18px; color: #777; align-self: center; }
   .nav-item.active { color: var(--gold-main); font-weight: 900; }
-  
-  .list-divider { 
-    text-align: center; color: var(--gold-main); font-weight: 900; 
-    font-size: 24px; margin: 40px 0 20px; border-top: 3px solid var(--gold-main); 
-    padding-top: 15px; letter-spacing: 5px;
-  }
-
-  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; }
-  .modal-content { background: #111; border-radius: 40px; padding: 35px; border: 3px solid var(--gold-main); max-width: 600px; margin: 0 auto; }
 
   .status-tag { padding: 8px 15px; border-radius: 10px; font-size: 16px; font-weight: bold; }
   .tag-unpaid { background: var(--accent-red); color: #fff; }
   .tag-paid { background: var(--success); color: #fff; }
+  
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; }
+  .modal-content { background: #111; border-radius: 40px; padding: 30px; border: 3px solid var(--gold-main); max-width: 600px; margin: 0 auto; }
 </style>
 </head>
 <body>
@@ -111,18 +104,17 @@
 
   <div class="app-container" id="view-student">
     <div class="header"><div class="main-title">音演三莊<br>公演管理系統</div></div>
-    
     <div class="login-card" id="student-login">
-        <div style="text-align:center; font-size:90px; margin-bottom:20px;">🎻</div>
+        <div style="text-align:center; font-size:80px; margin-bottom:10px;">🎻</div>
         <div id="step-name">
-            <span style="display:block; text-align:center; color:var(--gold-main); margin-bottom:20px; font-size:24px; font-weight:bold;">個人帳目查詢系統</span>
+            <span style="display:block; text-align:center; color:var(--gold-main); margin-bottom:20px; font-size:22px; font-weight:bold;">個人帳目查詢系統</span>
             <input type="text" id="stu-name" placeholder="請輸入姓名">
-            <button class="btn-gold" onclick="searchStudent()">登入系統</button>
+            <button class="btn-gold" onclick="searchStudent()">登入查詢系統</button>
         </div>
         <div id="step-first-set" style="display:none">
-            <p style="font-size:24px; text-align:center;">✨ 首次登入<br>請設定 4 位數密碼</p>
-            <input type="password" id="first-pwd" placeholder="數字密碼" maxlength="4" inputmode="numeric">
-            <button class="btn-gold" onclick="setPassword()">設定完成並進入</button>
+            <p style="font-size:24px; text-align:center;">首次登入，請設定密碼</p>
+            <input type="password" id="first-pwd" placeholder="4 位數字" maxlength="4" inputmode="numeric">
+            <button class="btn-gold" onclick="setPassword()">設定完成</button>
         </div>
         <div id="step-auth" style="display:none">
             <p id="auth-welcome" style="font-size:24px; text-align:center; color:var(--gold-light);"></p>
@@ -131,26 +123,23 @@
         </div>
     </div>
     <div id="student-info" style="display:none"></div>
-    <div style="margin-top:auto; text-align:center; padding:40px 0; color:#444; font-size:18px; font-weight:bold;" onclick="showLock()">管理端入口</div>
+    <div style="margin-top:auto; text-align:center; padding:40px 0; color:#444; font-size:18px; font-weight:bold;" onclick="showLock()">ADMIN</div>
   </div>
 
   <div class="app-container admin-panel" id="view-admin">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
         <h2 style="font-size:32px; color:var(--gold-main);">後台管理端</h2>
-        <button onclick="location.reload()" style="background:none; border:2px solid #555; color:#888; border-radius:10px; padding:10px 20px; font-size:18px;">登出</button>
+        <button onclick="location.reload()" style="background:none; border:2px solid #555; color:#888; border-radius:15px; padding:10px 20px; font-size:16px;">登出</button>
     </div>
-    
-    <div id="pane-list">
-        <div id="h-l"></div>
-    </div> 
+    <div id="pane-list"><div id="h-l"></div></div> 
     
     <div id="pane-att" style="display:none">
-        <div style="background:rgba(212,175,55,0.1); padding:20px; border-radius:20px; color:var(--gold-main); font-size:20px; text-align:center; margin-bottom:20px; font-weight:bold;">
-            循環切換：出席→遲10→遲20→遲30→缺100→請假
+        <div style="background:rgba(212,175,55,0.1); padding:20px; border-radius:20px; color:var(--gold-main); font-size:18px; text-align:center; margin-bottom:20px; font-weight:bold;">
+            請選取遲到細項，點擊最下方【儲存】生效
         </div>
-        <div id="att-grid" style="display:grid; grid-template-columns:repeat(2,1fr); gap:15px;"></div>
+        <div id="att-grid"></div>
         <div style="height:40px;"></div>
-        <button class="btn-gold" style="background:var(--success); color:#fff; height:110px; font-size:32px;" onclick="submitAtt()">💾 儲存今日點名紀錄與罰款</button>
+        <button class="btn-gold" style="background:var(--success); color:#fff; height:110px; font-size:32px;" onclick="submitAtt()">💾 儲存今日紀錄與累計罰款</button>
     </div>
 
     <div id="pane-rep" style="display:none">
@@ -162,10 +151,9 @@
     <div id="pane-set" style="display:none">
         <div class="login-card">
             <h3 style="color:var(--gold-main); text-align:center; font-size:28px;">帳目大重設</h3>
-            <p style="text-align:center; color:#888; margin-bottom:30px;">這會讓所有人回到「欠基金 1300」的狀態。</p>
-            <button class="btn-gold" onclick="resetAllAccounting()" style="background:var(--accent-red); color:#fff; font-size:22px;">🛑 確定帳目歸零</button>
+            <button class="btn-gold" onclick="resetAllAccounting()" style="background:var(--accent-red); color:#fff; font-size:22px;">🛑 確定帳目歸零(欠1300)</button>
             <div style="height:40px;"></div>
-            <h3 style="color:var(--success); text-align:center; font-size:28px;">名單強制補齊</h3>
+            <h3 style="color:var(--success); text-align:center; font-size:28px;">名單修復</h3>
             <button class="btn-gold" onclick="forceRestoreList()" style="background:var(--success); color:#fff; font-size:22px;">🔧 修復 55 人名單</button>
         </div>
     </div>
@@ -186,9 +174,9 @@
         </div>
         <div id="modal-body"></div>
         <div style="display:grid; grid-template-columns: 1fr; gap:15px; margin-top:30px;">
-            <button class="btn-gold" style="background:#444; color:#fff; font-size:22px;" onclick="manualAddFineFromModal()">手動雜項費</button>
+            <button class="btn-gold" style="background:#444; color:#fff; font-size:22px;" onclick="manualAddFineFromModal()">雜項費輸入</button>
             <button class="btn-gold" style="background:#222; color:#fff; font-size:22px;" onclick="setPropFromModal()">道具費設定</button>
-            <button class="btn-gold" style="font-size:22px;" onclick="adminPaidFromModal()">已收現金紀錄</button>
+            <button class="btn-gold" style="font-size:22px;" onclick="adminPaidFromModal()">收受現金</button>
         </div>
         <div style="margin-top:30px; border-top:2px solid #333; padding-top:30px;">
             <b style="color:var(--gold-light); font-size:24px;">對帳歷史明細：</b>
@@ -214,8 +202,7 @@
   _db.ref('students').on('value', s => {
       _all = s.val() || {};
       if(Object.keys(_all).length === 0) forceRestoreList(true);
-      renderAdminList(); renderFullReport(); 
-      if(_user) renderUser();
+      renderAdminList(); renderFullReport(); if(_user) renderUser();
       if(_currentModalId) updateModalContent(_currentModalId);
   });
 
@@ -224,81 +211,94 @@
     const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99));
     let html = "";
     sorted.forEach(([id, s]) => {
-      if(s.no === 42) html += `<div class="list-divider">—— 演三莊同學 ——</div>`;
-      // 計算邏輯：基金預設未繳時加1300
+      if(s.no === 42) html += `<div style="text-align:center; color:var(--gold-main); font-weight:900; font-size:24px; margin:30px 0;">—— 演三莊名單 ——</div>`;
       const fundAmt = (s.fundPaid === true) ? 0 : 1300;
       const debt = (s.totalFine||0) + (s.propFine||0) + fundAmt - (s.paidAmt||0);
       html += `<div class="list-item">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div class="name-link" onclick="openModal('${id}')">${s.no}. ${s.name}</div>
-            <span onclick="toggleFund('${id}', ${s.fundPaid})" class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}" style="font-size:18px; padding:12px 20px;">${s.fundPaid?'基金已繳':'欠 1300'}</span>
+            <span onclick="toggleFund('${id}', ${s.fundPaid})" class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">${s.fundPaid?'基金已繳':'欠 1300'}</span>
         </div>
         <div class="quota-row">
             <div class="quota-box-text ${s.leaveQuota<=1?'used':''}" onclick="adminDeduct('${id}',1)">${s.leaveQuota<=1?'已扣 100':'1 次折抵'}</div>
             <div class="quota-box-text ${s.leaveQuota<=0?'used':''}" onclick="adminDeduct('${id}',0)">${s.leaveQuota<=0?'已扣 100':'2 次折抵'}</div>
         </div>
-        <div style="text-align:right; margin-top:15px;"><b style="color:var(--accent-red); font-size:38px;">$${debt}</b></div>
+        <div style="text-align:right; margin-top:15px;"><b style="color:var(--accent-red); font-size:40px;">$${debt}</b></div>
       </div>`;
     });
     l.innerHTML = html;
   }
 
+  // 累計式點名 UI
   function renderAttGrid() {
     const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99));
     document.getElementById('att-grid').innerHTML = sorted.map(([id, s]) => {
-      if (!_attData[id]) _attData[id] = { status: 'present', note: '' };
-      const cur = _attData[id].status;
-      const statusTextMap = { 'present': '出席', 'late10': '遲到 10', 'late20': '一節遲 20', 'late30': '全遲 30', 'absent': '缺席 100', 'leave': '請假' };
-      const statusClassMap = { 'present': 'status-present', 'late10': 'status-late10', 'late20': 'status-late20', 'late30': 'status-late30', 'absent': 'status-absent', 'leave': 'status-leave' };
-      return `<div id="at-${id}" onclick="tk('${id}')" class="att-box ${cur!=='present'?'active-late':''}">
-        <b style="font-size:24px;">${s.name}</b><br>
-        <span id="txt-${id}" class="att-status-text ${statusClassMap[cur]}">${statusTextMap[cur]}</span>
-        <button onclick="setNote(event,'${id}')" style="font-size:16px; background:#332b12; color:var(--gold-main); border:2px solid var(--gold-main); margin-top:15px; border-radius:12px; padding:8px 18px;">${_attData[id].note?'已註記':'寫註記'}</button>
+      if (!_attData[id]) _attData[id] = { sum: 0, early: false, p1: false, extra: 0, absent: false, leave: false, note: '' };
+      const d = _attData[id];
+      return `<div class="att-grid-item">
+        <span class="att-name">${s.name}</span>
+        <div class="att-btn-group">
+            <button class="att-btn ${d.early?'active':''}" onclick="toggleAtt('${id}','early')">8:00遲(+10)</button>
+            <button class="att-btn ${d.p1?'active':''}" onclick="toggleAtt('${id}','p1')">第一節(+20)</button>
+            <button class="att-btn" onclick="addExtra('${id}')">追加一節(+10)</button>
+            <button class="att-btn danger ${d.absent?'active':''}" onclick="toggleAtt('${id}','absent')">缺席(100)</button>
+            <button class="att-btn ${d.leave?'active':''}" onclick="toggleAtt('${id}','leave')">請假(0)</button>
+            <button class="att-btn" onclick="resetAtt('${id}')" style="background:#444">重設/出席</button>
+        </div>
+        <div class="pending-sum">今日預扣：$${d.sum} ${d.extra > 0 ? '(加'+d.extra+'節)' : ''}</div>
+        <button onclick="setNote(event,'${id}')" style="width:100%; margin-top:10px; background:#332b12; color:var(--gold-main); border:1px solid var(--gold-main); padding:10px; border-radius:10px;">${d.note?'已註記':'寫註記'}</button>
       </div>`;
     }).join('');
   }
 
-  window.tk = (id) => {
-      const sMap = { 'present':['late10','遲到 10','status-late10'], 'late10':['late20','一節遲 20','status-late20'], 'late20':['late30','全遲 30','status-late30'], 'late30':['absent','缺席 100','status-absent'], 'absent':['leave','請假','status-leave'], 'leave':['present','出席','status-present'] };
-      const cur = _attData[id].status; const next = sMap[cur]; _attData[id].status = next[0];
-      const el = document.getElementById('txt-'+id); el.innerText = next[1]; el.className = 'att-status-text ' + next[2];
+  function toggleAtt(id, type) {
+      const d = _attData[id];
+      if(type === 'absent') { resetAtt(id); d.absent = true; d.sum = 100; }
+      else if(type === 'leave') { resetAtt(id); d.leave = true; d.sum = 0; }
+      else {
+          d.absent = false; d.leave = false;
+          if(type === 'early') d.early = !d.early;
+          if(type === 'p1') d.p1 = !d.p1;
+          calcSum(id);
+      }
+      renderAttGrid();
+  }
+  function addExtra(id) { _attData[id].absent = false; _attData[id].leave = false; _attData[id].extra++; calcSum(id); renderAttGrid(); }
+  function resetAtt(id) { _attData[id] = { sum: 0, early: false, p1: false, extra: 0, absent: false, leave: false, note: _attData[id].note }; calcSum(id); renderAttGrid(); }
+  function calcSum(id) {
+      const d = _attData[id];
+      if(d.absent) d.sum = 100;
+      else if(d.leave) d.sum = 0;
+      else d.sum = (d.early?10:0) + (d.p1?20:0) + (d.extra*10);
   }
 
   function submitAtt() {
       const t = new Date().toLocaleDateString();
-      Object.entries(_attData).forEach(([id, data]) => {
-          let fine = 0; let typeName = "";
-          if(data.status === 'late10') { fine = 10; typeName = "遲到(8:00-8:10)"; }
-          else if(data.status === 'late20') { fine = 20; typeName = "第一節遲到"; }
-          else if(data.status === 'late30') { fine = 30; typeName = "全遲到"; }
-          else if(data.status === 'absent') { fine = 100; typeName = "無故缺席"; }
-          if(fine > 0) {
-              _db.ref(`students/${id}`).update({ totalFine: (_all[id].totalFine||0) + fine });
-              _db.ref(`students/${id}/history`).push({ type: `${t} ${typeName}`, amt: fine, time: t });
+      Object.entries(_attData).forEach(([id, d]) => {
+          if(d.sum > 0) {
+              let reason = "";
+              if(d.absent) reason = "無故缺席";
+              else reason = `遲到累計(${(d.early?'早遲+':'')}${(d.p1?'一節+':'')}${(d.extra>0?d.extra+'節追加':'')})`.replace(/\+$/, "");
+              
+              _db.ref(`students/${id}`).update({ totalFine: (_all[id].totalFine||0) + d.sum });
+              _db.ref(`students/${id}/history`).push({ type: `${t} ${reason}`, amt: d.sum, time: t });
           }
-          if(data.note) _db.ref(`students/${id}/history`).push({ type: `${t} 老師註記`, note: data.note, time: t });
+          if(d.note) _db.ref(`students/${id}/history`).push({ type: `${t} 點名註記`, note: d.note, time: t });
       });
-      _attData = {}; alert("💾 罰款已存入！全班總欠費已更新。"); go('list');
+      _attData = {}; alert("💾 紀錄已累計並儲存！金額已同步更新。"); go('list');
   }
 
-  function forceRestoreList(isAuto=false) { 
-      if(!isAuto && !confirm("確定修復名單？")) return; 
-      ALL_NAMES.forEach((n, index) => { 
-          const exists = Object.values(_all).find(s => s.name === n); 
-          if(!exists) _db.ref('students').push({ no:index+1, name:n, totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false }); 
-      }); 
-      if(!isAuto) alert("修復成功"); 
-  }
-
+  // 帳目大歸零：強制 false
   function resetAllAccounting() { 
-      if(confirm("確定帳目歸零？\n全班將回到「未繳基金 1300」的狀態。")) { 
+      if(confirm("確定帳目大重設？\n這會讓所有人回到「欠基金 1300」的狀態。")) { 
           Object.keys(_all).forEach(id => { 
               _db.ref(`students/${id}`).update({ totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false, propNote:"", history:null, password:null }); 
           }); 
-          alert("數據已清空！"); 
+          alert("全班已歸零重設！"); 
       } 
   }
 
+  // 其他系統基礎邏輯
   function updateModalContent(id) {
       const s = _all[id]; const fundAmt = (s.fundPaid === true) ? 0 : 1300;
       const debt = (s.totalFine||0) + (s.propFine||0) + fundAmt - (s.paidAmt||0);
@@ -306,7 +306,7 @@
       const h = s.history?Object.values(s.history).reverse():[];
       document.getElementById('modal-history').innerHTML = h.map(i => `<div style="padding:15px 0; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;"><span><b style="color:var(--gold-main)">${i.type}</b>${i.note?'<br><small style="color:#888">'+i.note+'</small>':''}</span><span style="text-align:right; font-weight:bold; color:var(--gold-light);">${i.amt?'$'+i.amt:''}</span></div>`).join('') || '尚無紀錄';
   }
-
+  function forceRestoreList(isAuto=false) { if(!isAuto && !confirm("確定修復名單？")) return; ALL_NAMES.forEach((n, index) => { const exists = Object.values(_all).find(s => s.name === n); if(!exists) _db.ref('students').push({ no:index+1, name:n, totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false }); }); if(!isAuto) alert("修復成功"); }
   function searchStudent() { const n = document.getElementById('stu-name').value.trim(); const f = Object.entries(_all).find(([id, s]) => s.name === n); if(!f) return alert("查無姓名"); _user = f[0]; document.getElementById('step-name').style.display = 'none'; if(!_all[_user].password) document.getElementById('step-first-set').style.display = 'block'; else document.getElementById('step-auth').style.display = 'block'; }
   function setPassword() { const p = document.getElementById('first-pwd').value; if(p.length !== 4) return alert("請設4位數字"); _db.ref(`students/${_user}`).update({ password: p }); renderUser(); }
   function authStudent() { if(_all[_user].password === document.getElementById('auth-pwd').value) renderUser(); else alert("錯誤"); }
@@ -321,15 +321,15 @@
   function closeModal() { document.getElementById('detail-modal').style.display='none'; _currentModalId=null; }
   function manualAddFineFromModal() { const amt = prompt("金額："); const r = prompt("原因："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ totalFine:(_all[_currentModalId].totalFine||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type: `${new Date().toLocaleDateString()} 雜費`, note: r, amt: parseInt(amt), time: new Date().toLocaleDateString() }); } }
   function setPropFromModal() { const amt = prompt("金額："); const note = prompt("說明："); if(amt) _db.ref(`students/${_currentModalId}`).update({ propFine:parseInt(amt), propNote:note }); }
-  function adminPaidFromModal() { const amt = prompt("金額："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ paidAmt:(_all[_currentModalId].paidAmt||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type: `${new Date().toLocaleDateString()} 現金收訖`, amt: parseInt(amt), time: new Date().toLocaleDateString() }); } }
-  function adminDeduct(id, target) { const s = _all[id]; const q = s.leaveQuota || 2; if (q <= target) { if(confirm("取消折抵？")) _db.ref(`students/${id}`).update({ leaveQuota: q + 1, totalFine: (s.totalFine || 0) + 100 }); } else { if(confirm("確定折抵 $100？")) { _db.ref(`students/${id}`).update({ leaveQuota: q - 1, totalFine: Math.max(0, (s.totalFine || 0) - 100) }); _db.ref(`students/${id}/history`).push({ type: `${new Date().toLocaleDateString()} 機會折抵`, amt: -100, time: new Date().toLocaleDateString() }); } } }
+  function adminPaidFromModal() { const amt = prompt("收錢："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ paidAmt:(_all[_currentModalId].paidAmt||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type: `${new Date().toLocaleDateString()} 收訖現金`, amt: parseInt(amt), time: new Date().toLocaleDateString() }); } }
+  function adminDeduct(id, target) { const s = _all[id]; const q = s.leaveQuota || 2; if (q <= target) { if(confirm("取消折抵？")) _db.ref(`students/${id}`).update({ leaveQuota: q + 1, totalFine: (s.totalFine || 0) + 100 }); } else { if(confirm("抵銷 $100？")) { _db.ref(`students/${id}`).update({ leaveQuota: q - 1, totalFine: Math.max(0, (s.totalFine || 0) - 100) }); _db.ref(`students/${id}/history`).push({ type: `${new Date().toLocaleDateString()} 機會折抵`, amt: -100, time: new Date().toLocaleDateString() }); } } }
   function toggleFund(id, cur) { _db.ref(`students/${id}`).update({ fundPaid: !cur }); }
-  function go(p, el) { ['list','att','rep','set'].forEach(i => document.getElementById('pane-'+i).style.display = 'none'); document.getElementById('pane-'+p).style.display = 'block'; document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); if(el) el.classList.add('active'); if(p === 'att') renderAttGrid(); }
+  function go(p, el) { ['list', 'att', 'rep', 'set'].forEach(i => document.getElementById('pane-' + i).style.display = 'none'); document.getElementById('pane-' + p).style.display = 'block'; document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); if (el) el.classList.add('active'); if (p === 'att') renderAttGrid(); }
   function showLock() { document.getElementById('lock-overlay').style.display='flex'; _pin=""; }
   function press(v) { if(v==='del') _pin=_pin.slice(0,-1); else if(_pin.length<4) _pin+=v; const ds=document.getElementById('pwd-dots').children; for(let i=0; i<4; i++) ds[i].style.background=i<_pin.length?'var(--gold-main)':'none'; if(_pin.length===4) { if(_pin===_mPin) { document.getElementById('lock-overlay').style.display='none'; document.getElementById('view-student').style.display='none'; document.getElementById('view-admin').style.display='block'; go('list'); } else { alert("錯誤"); _pin=""; } } }
-  function renderFullReport() { const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99)); let total = 0; let html = ""; sorted.forEach(([id, s]) => { if(s.no === 42) html += `<div class="list-divider">演三莊名單</div>`; const fundAmt = (s.fundPaid === true) ? 0 : 1300; const d = (s.totalFine||0) + (s.propFine||0) + fundAmt - (s.paidAmt||0); total += d; html += `<div style="display:flex; justify-content:space-between; padding:15px 0; border-bottom:1px solid #222;"><span>${s.no}. ${s.name} ${s.fundPaid?'':'(欠 1300)'}</span><span style="color:${d>0?'var(--accent-red)':'#666'}">$${d}</span></div>`; }); document.getElementById('full-report-list').innerHTML = html; document.getElementById('total-sum-badge').innerText = '$' + total; }
-  function doExcel() { const d = [["座號", "姓名", "基金", "次數", "欠費"]]; Object.values(_all).sort((a,b)=>a.no-b.no).forEach(s => { const fund = (s.fundPaid===true)?0:1300; d.push([s.no, s.name, s.fundPaid?'已繳':'未繳', s.leaveQuota, (s.totalFine||0)+(s.propFine||0)+fund-(s.paidAmt||0)]); }); const ws = XLSX.utils.aoa_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "報表"); XLSX.writeFile(wb, "公演帳目.xlsx"); }
-  function setNote(e, id) { e.stopPropagation(); const n = prompt("內容：", _attData[id].note); if(n!==null) { _attData[id].note = n; renderAttGrid(); } }
+  function renderFullReport() { const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99)); let total = 0; let html = ""; sorted.forEach(([id, s]) => { if(s.no === 42) html += `<div style="text-align:center; color:var(--gold-main); font-weight:900; margin:15px 0;">演三莊名單</div>`; const fundAmt = (s.fundPaid === true) ? 0 : 1300; const d = (s.totalFine||0) + (s.propFine||0) + fundAmt - (s.paidAmt||0); total += d; html += `<div style="display:flex; justify-content:space-between; padding:15px 0; border-bottom:1px solid #222;"><span>${s.no}. ${s.name} ${s.fundPaid?'':'(欠1300)'}</span><span style="color:${d>0?'var(--accent-red)':'#666'}">$${d}</span></div>`; }); document.getElementById('full-report-list').innerHTML = html; document.getElementById('total-sum-badge').innerText = '$' + total; }
+  function doExcel() { const d = [["座號", "姓名", "基金", "機會", "欠費"]]; Object.values(_all).sort((a,b)=>a.no-b.no).forEach(s => { const fund = (s.fundPaid===true)?0:1300; d.push([s.no, s.name, s.fundPaid?'已繳':'未繳', s.leaveQuota, (s.totalFine||0)+(s.propFine||0)+fund-(s.paidAmt||0)]); }); const ws = XLSX.utils.aoa_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "報表"); XLSX.writeFile(wb, "公演帳目.xlsx"); }
+  function setNote(e, id) { e.stopPropagation(); const n = prompt("輸入註記內容：", _attData[id].note); if(n!==null) { _attData[id].note = n; renderAttGrid(); } }
 </script>
 </body>
 </html>
