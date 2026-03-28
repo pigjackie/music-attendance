@@ -11,7 +11,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, update, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, get, update, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey:            "AIzaSyC_6aza1KH8GXxUbYBraK7wcqPrSUSF-Ns",
@@ -82,8 +82,8 @@
         ${owed === 0 ? '<div class="model-badge">準時模範生 ✅</div>' : `<div class="fee-badge owed">待繳 $${owed}</div>`}</div>
         <div class="card-pills"><div class="pill">遲到 <span>${s.lateCount}</span></div><div class="pill">出席 <span>${s.presentCount}</span></div><div class="pill">請假 <span>${s.leaveCount||0}</span></div></div>
       </div>
-      <div class="section-label">最近記錄</div>
-      ${hist.slice(0,5).map(h=>`<div class="history-item"><span>${h.type==='late'?'⏰ 遲到':h.type==='paid'?'💰 繳費':h.type==='leave'?'🍃 請假':h.type==='absent'?'❌ 缺席':'✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}`;
+      <div class="section-label">詳細明細 (日期/事由)</div>
+      ${hist.map(h=>`<div class="history-item"><span>${h.type==='late'?'⏰ 遲到 $'+FEE : h.type==='paid'?'💰 繳費 $'+FEE : h.type==='leave'?'🍃 請假' : h.type==='absent'?'❌ 缺席' : '✅ 出席'}</span><span class="time">${h.time}</span></div>`).join('')}`;
   };
 
   let pinBuffer = '';
@@ -92,7 +92,6 @@
   function updateDots() { for(let i=0;i<4;i++) document.getElementById('d'+i).className='pin-dot'+(i<pinBuffer.length?' filled':''); }
   
   function checkPin() {
-    // 🔒 預設密碼已改為老師要求的 0902
     const stored = localStorage.getItem('gp_pin') || '0902';
     if(pinBuffer === stored) {
       isAdmin = true; hide('lock-screen'); show('admin-app'); showTab('list'); pinBuffer = ''; updateDots();
@@ -102,7 +101,7 @@
   }
 
   window.showTab = (name) => {
-    ['list','attend', 'report'].forEach(t => hide('apage-'+t));
+    ['list','attend', 'report', 'settings'].forEach(t => hide('apage-'+t));
     show('apage-'+name);
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     const targetNav = document.getElementById('nav-'+name);
@@ -118,23 +117,19 @@
     container.innerHTML = Object.entries(students).map(([id,s])=>{
       const owed = Math.max(0, s.lateCount - s.paidCount) * FEE;
       return `<div class="student-card"><div class="card-top"><div><div class="student-name">${s.name}</div><div class="student-num">${id}</div></div>
-      <div class="fee-badge ${owed>0?'':'model-badge'}">${owed>0?'$'+owed:'已繳清'}</div></div>
+      <div class="fee-badge ${owed>0?'':'model-badge'}">${owed>0?'$'+owed:'已清'}</div></div>
       <div style="display:flex;gap:10px"><button onclick="quickAction('${id}','paid')" style="flex:1;background:var(--green);border:none;padding:10px;border-radius:10px;font-weight:bold;color:#000">收錢</button>
       <button onclick="quickAction('${id}','late')" style="flex:1;background:var(--accent);border:none;padding:10px;border-radius:10px;color:#fff;font-weight:bold">+遲到</button></div></div>`;
     }).join('');
   };
 
   window.quickAction = async function(id, type) {
-    const s = students[id]; const time = new Date().toLocaleString('zh-TW');
+    const s = students[id]; const time = new Date().toLocaleDateString('zh-TW');
     if(type==='paid' && s.paidCount < s.lateCount) { await update(ref(db,`students/${id}`), {paidCount: s.paidCount+1}); await push(ref(db, `students/${id}/history`), {type:'paid', time}); showToast("收款成功"); }
     else if(type==='late') { await update(ref(db,`students/${id}`), {lateCount: s.lateCount+1}); await push(ref(db, `students/${id}/history`), {type:'late', time}); showToast("遲到+1"); }
   };
 
-  // 🔄 預設全部出席
-  function resetAttendTemp() {
-    attendTemp = {};
-    Object.keys(students).forEach(id => { attendTemp[id] = 'present'; });
-  }
+  function resetAttendTemp() { attendTemp = {}; Object.keys(students).forEach(id => { attendTemp[id] = 'present'; }); }
 
   window.renderAttendGrid = function() {
     const grid = document.getElementById('att-grid');
@@ -154,9 +149,8 @@
   };
 
   window.saveAttendance = async function() {
-    const time = new Date().toLocaleString('zh-TW');
-    const msg = confirm("確定要儲存本次點名紀錄嗎？(預設全勤)");
-    if(!msg) return;
+    const time = new Date().toLocaleDateString('zh-TW');
+    if(!confirm("確定儲存？預設未更動者皆為出席。")) return;
     for (const [id, status] of Object.entries(attendTemp)) {
       const s = students[id]; const up = {};
       if(status==='present') up.presentCount = (s.presentCount||0)+1;
@@ -165,7 +159,7 @@
       if(status==='leave') up.leaveCount = (s.leaveCount||0)+1;
       await update(ref(db,`students/${id}`), up); await push(ref(db, `students/${id}/history`), {type: status, time});
     }
-    showToast("紀錄已儲存"); showTab('list');
+    showToast("點名完成"); showTab('list');
   };
 
   window.renderReport = () => { 
@@ -174,13 +168,30 @@
       const total = Object.values(students).reduce((a,s)=> a + Math.max(0, s.lateCount - s.paidCount)*FEE, 0);
       rTotal.textContent = '$' + total;
     }
+    const container = document.getElementById('report-detail');
+    container.innerHTML = Object.values(students).filter(s => s.lateCount > 0).map(s => `
+      <div class="history-item"><span>${s.name} (累計罰款: $${s.lateCount*FEE})</span><span style="color:var(--accent)">欠 $${Math.max(0, s.lateCount - s.paidCount)*FEE}</span></div>
+    `).join('') || '<div style="text-align:center;color:var(--muted)">目前無人受罰</div>';
+  };
+
+  window.resetAllData = async function() {
+    const pwd = prompt("⚠️ 此動作將清空所有罰款與出席紀錄！\n請輸入管理密碼確認：");
+    if(pwd === '0902') {
+      if(confirm("最後確認：真的要重設所有數據嗎？名單將恢復初始狀態。")) {
+        await remove(ref(db, 'students'));
+        initStudents();
+        showToast("全系統已重設");
+      }
+    } else if(pwd !== null) {
+      showToast("密碼錯誤，重設失敗");
+    }
   };
 
   window.copyOwedList = function() {
-    let text = "【畢業公演催繳單】\n";
+    let text = "【畢業公演罰款通知】\n截止今日待繳名單：\n";
     let found = false;
     Object.values(students).forEach(s => { const owed = Math.max(0, s.lateCount - s.paidCount)*FEE; if (owed > 0) { text += `📌 ${s.name}：$${owed}\n`; found=true; } });
-    if(!found) text = "🎉 目前全員繳清！";
+    if(!found) text = "🎉 目前全員繳清，大家辛苦了！";
     navigator.clipboard.writeText(text).then(() => showToast("已複製名單"));
   };
 
@@ -209,42 +220,42 @@ body{background:var(--bg);color:var(--text);overflow-x:hidden}
 .pill{background:rgba(255,255,255,0.05);padding:5px 12px;border-radius:8px;font-size:12px;color:var(--muted)}
 .pill span{color:var(--text);font-weight:bold}
 .att-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.att-cell{background:var(--surface);padding:10px 5px;border-radius:12px;text-align:center;border:1px solid var(--border);font-size:12px;transition:0.2s}
+.att-cell{background:var(--surface);padding:10px 5px;border-radius:12px;text-align:center;border:1px solid var(--border);font-size:12px}
 .att-cell.present-bg{border-color:var(--green);background:rgba(48,209,88,0.15)}
 .att-cell.late-bg{border-color:var(--accent);background:rgba(255,107,53,0.25)}
 .att-cell.absent-bg{border-color:var(--red);background:rgba(255,69,58,0.25)}
 .att-cell.leave-bg{border-color:var(--blue);background:rgba(10,132,255,0.25)}
-.btn-primary{background:var(--accent);color:#fff;border:none;padding:16px;border-radius:14px;width:100%;font-weight:bold;font-size:16px;margin-top:10px;box-shadow:0 4px 15px rgba(255,107,53,0.3)}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:16px;border-radius:14px;width:100%;font-weight:bold;font-size:16px;margin-top:10px}
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);display:flex;padding:10px 0 25px;border-top:1px solid var(--border);z-index:900}
-.nav-item{flex:1;text-align:center;font-size:10px;color:var(--muted);cursor:pointer;transition:0.2s}
+.nav-item{flex:1;text-align:center;font-size:10px;color:var(--muted);cursor:pointer}
 .nav-item.active{color:var(--accent)}
 .icon{font-size:24px;display:block;margin-bottom:4px}
 .section-label{font-size:11px;color:var(--muted);letter-spacing:2px;margin:20px 0 10px;text-transform:uppercase}
 .history-item{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px}
 .history-item .time{color:var(--muted);font-size:12px}
-.toast{position:fixed;top:50px;left:50%;transform:translateX(-50%);background:var(--accent);padding:10px 25px;border-radius:30px;font-size:13px;font-weight:bold;opacity:0;transition:0.3s;z-index:2000;pointer-events:none;box-shadow:0 5px 15px rgba(0,0,0,0.5)}
+.toast{position:fixed;top:50px;left:50%;transform:translateX(-50%);background:var(--accent);padding:10px 25px;border-radius:30px;font-size:13px;font-weight:bold;opacity:0;transition:0.3s;z-index:2000;pointer-events:none}
 .toast.show{opacity:1}
 input{background:var(--surface);border:1px solid var(--border);color:#fff;padding:14px;border-radius:12px;width:100%;outline:none;font-size:16px}
-input:focus{border-color:var(--accent)}
 </style>
 </head>
 <body>
-<div id="lock-screen"><div style="font-size:60px;margin-bottom:10px">🎭</div><h2 style="margin-bottom:5px">畢業公演出席系統</h2><p style="color:var(--muted);font-size:13px">請輸入管理密碼</p>
+<div id="lock-screen"><div style="font-size:60px;margin-bottom:10px">🎭</div><h2>畢業公演出席系統</h2><p style="color:var(--muted);font-size:13px">請輸入管理密碼</p>
 <div class="pin-dots"><div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div><div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div></div>
 <div class="numpad">
 <button class="num-btn" onclick="pinInput(1)">1</button><button class="num-btn" onclick="pinInput(2)">2</button><button class="num-btn" onclick="pinInput(3)">3</button>
 <button class="num-btn" onclick="pinInput(4)">4</button><button class="num-btn" onclick="pinInput(5)">5</button><button class="num-btn" onclick="pinInput(6)">6</button>
 <button class="num-btn" onclick="pinInput(7)">7</button><button class="num-btn" onclick="pinInput(8)">8</button><button class="num-btn" onclick="pinInput(9)">9</button>
 <button class="num-btn" style="background:transparent"></button><button class="num-btn" onclick="pinInput(0)">0</button><button class="num-btn" onclick="pinDel()">⌫</button>
-</div><button onclick="goStudent()" style="margin-top:40px;color:var(--blue);background:none;border:none;font-weight:bold;font-size:15px">👤 學生查詢個人紀錄</button></div>
+</div><button onclick="goStudent()" style="margin-top:40px;color:var(--blue);background:none;border:none;font-weight:bold">👤 學生查詢入口</button></div>
 
-<div id="student-screen" class="safe-area" style="display:none"><h1>出席查詢</h1><div style="display:flex;gap:10px;margin:25px 0"><input type="text" id="student-name-input" placeholder="請輸入姓名"><button onclick="studentLookup()" style="background:var(--accent);border:none;padding:0 25px;border-radius:12px;color:#fff;font-weight:bold">查詢</button></div><div id="student-result"></div><button onclick="goLock()" style="margin-top:50px;color:var(--muted);background:none;border:none;width:100%;font-size:14px">← 返回管理登入</button></div>
+<div id="student-screen" class="safe-area" style="display:none"><h1>個人查詢</h1><div style="display:flex;gap:10px;margin:25px 0"><input type="text" id="student-name-input" placeholder="請輸入姓名"><button onclick="studentLookup()" style="background:var(--accent);border:none;padding:0 25px;border-radius:12px;color:#fff;font-weight:bold">查詢</button></div><div id="student-result"></div><button onclick="goLock()" style="margin-top:50px;color:var(--muted);background:none;border:none;width:100%">← 返回管理登入</button></div>
 
 <div id="admin-app" style="display:none">
-<div class="safe-area" id="apage-list"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px"><h2>學生名冊</h2><button onclick="goLock()" style="background:none;border:none;font-size:24px">🔒</button></div><div id="admin-list"></div></div>
-<div class="safe-area" id="apage-attend" style="display:none"><h2>即時點名</h2><p style="color:var(--muted);font-size:13px;margin:15px 0">預設全部 ✅(出)。點擊切換：⏰(遲)→❌(缺)→🍃(假)</p><div class="att-grid" id="att-grid"></div><button class="btn-primary" onclick="saveAttendance()">💾 儲存點名紀錄</button></div>
-<div class="safe-area" id="apage-report" style="display:none"><h2>數據報表</h2><div class="student-card" style="border-left:5px solid var(--blue);margin-top:20px;padding:25px"><div id="r-total" style="font-size:32px;font-weight:bold;color:var(--accent);font-family:'Space Mono'">$0</div><div style="font-size:13px;color:var(--muted);margin-top:5px">全班總待收罰款</div></div><button class="btn-primary" onclick="copyOwedList()" style="background:var(--blue);margin-top:20px">📋 複製催繳名單 (Line)</button></div>
-<nav class="bottom-nav"><div id="nav-list" class="nav-item" onclick="showTab('list')"><span class="icon">👥</span>名單</div><div id="nav-attend" class="nav-item" onclick="showTab('attend')"><span class="icon">📅</span>點名</div><div id="nav-report" class="nav-item" onclick="showTab('report')"><span class="icon">📊</span>報表</div></nav>
+<div class="safe-area" id="apage-list"><h2>名冊管理</h2><div id="admin-list" style="margin-top:20px"></div></div>
+<div class="safe-area" id="apage-attend" style="display:none"><h2>快速點名</h2><p style="color:var(--muted);font-size:13px;margin:15px 0">預設全勤 ✅。點擊切換：⏰(遲)→❌(缺)→🍃(假)</p><div class="att-grid" id="att-grid"></div><button class="btn-primary" onclick="saveAttendance()">💾 儲存今日紀錄</button></div>
+<div class="safe-area" id="apage-report" style="display:none"><h2>罰款報表</h2><div class="student-card" style="border-left:5px solid var(--blue);margin-top:20px"><div id="r-total" style="font-size:32px;font-weight:bold;color:var(--accent)">$0</div><div style="font-size:13px;color:var(--muted)">目前全班總待收罰款</div></div><button class="btn-primary" onclick="copyOwedList()" style="background:var(--blue)">📋 複製催繳名單</button><div class="section-label">受罰名單與欠費金額</div><div id="report-detail"></div></div>
+<div class="safe-area" id="apage-settings" style="display:none"><h2>系統設定</h2><div class="student-card" style="margin-top:20px"><p style="color:var(--muted);font-size:14px;margin-bottom:15px">如果您需要開啟新的公演，請點擊下方按鈕重設所有數據。</p><button onclick="resetAllData()" style="background:var(--red);color:#fff;border:none;padding:12px;border-radius:10px;width:100%;font-weight:bold">🛑 清空所有數據 (重設系統)</button></div><button onclick="goLock()" class="btn-primary" style="background:var(--surface);border:1px solid var(--border)">🔒 鎖定並登出</button></div>
+<nav class="bottom-nav"><div id="nav-list" class="nav-item" onclick="showTab('list')"><span class="icon">👥</span>名單</div><div id="nav-attend" class="nav-item" onclick="showTab('attend')"><span class="icon">📅</span>點名</div><div id="nav-report" class="nav-item" onclick="showTab('report')"><span class="icon">📊</span>報表</div><div id="nav-settings" class="nav-item" onclick="showTab('settings')"><span class="icon">⚙️</span>設定</div></nav>
 </div>
 <div class="toast" id="toast"></div>
 </body>
