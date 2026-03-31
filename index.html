@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>音演三莊公演管理系統 V5.2</title>
+<title>音演三莊公演管理系統 V5.3</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -18,9 +18,10 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; background: radial-gradient(circle at top right, #332b12 0%, #0a0a0a 100%); background-attachment: fixed; color: #fff; font-family: 'Noto Sans TC', sans-serif; }
   .app-container { width: 100%; max-width: 500px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; position: relative; z-index: 10; }
-  .main-title { font-size: 38px; font-weight: 900; background: linear-gradient(to bottom, var(--gold-light), var(--gold-main)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 5px 20px rgba(212, 175, 55, 0.4); line-height: 1.2; text-align: center; margin-top: 40px; }
+  .main-title { font-size: 38px; font-weight: 900; background: linear-gradient(to bottom, var(--gold-light), var(--gold-main)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 5px 20px rgba(212, 175, 55, 0.4); line-height: 1.2; text-align: center; margin-top: 40px; margin-bottom: 20px; }
 
-  .login-card { background: rgba(255, 255, 255, 0.1); border-radius: 40px; padding: 40px 25px; border: 2px solid var(--gold-main); backdrop-filter: blur(20px); margin: 20px 0; box-shadow: 0 25px 50px rgba(0,0,0,0.8); }
+  /* 登入卡片 */
+  .login-card { background: rgba(255, 255, 255, 0.1); border-radius: 40px; padding: 40px 25px; border: 2px solid var(--gold-main); backdrop-filter: blur(20px); margin: 15px 0; box-shadow: 0 25px 50px rgba(0,0,0,0.8); }
   input { width: 100%; padding: 20px; border-radius: 20px; border: 3px solid var(--gold-main); background: rgba(0,0,0,0.7); color: #fff; font-size: 24px; font-weight: bold; margin-bottom: 20px; text-align: center; }
   .btn-gold { width: 100%; padding: 20px; border-radius: 20px; background: linear-gradient(135deg, var(--gold-light), var(--gold-main)); color: #000; font-weight: 900; font-size: 24px; border: none; cursor: pointer; }
 
@@ -30,14 +31,15 @@
   #att-grid { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; margin-top: 20px; }
   .att-box { padding: 30px 10px 15px; border-radius: 25px; border: 2px solid #444; text-align: center; position: relative; min-height: 140px; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; cursor: pointer; background: rgba(255,255,255,0.05); }
   .box-no { position: absolute; top: 12px; left: 15px; font-size: 13px; font-weight: 900; }
-  .att-status-text { font-size: 19px; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+  .att-status-text { font-size: 19px; font-weight: 900; }
 
   .state-present { background-color: rgba(16, 185, 129, 0.2); border-color: var(--clr-present); color: var(--clr-present); }
-  .state-late10 { background-color: rgba(245, 158, 11, 0.4); border-color: var(--clr-late10); color: var(--gold-light); }
-  .state-late20 { background-color: rgba(249, 115, 22, 0.6); border-color: var(--clr-late20); color: #fff; }
-  .state-absent { background-color: rgba(239, 68, 68, 0.6); border-color: var(--clr-absent); color: #fff; }
-  .state-leave { background-color: rgba(59, 130, 246, 0.4); border-color: var(--clr-leave); color: #fff; }
-  .strike-item { text-decoration: line-through !important; color: #555 !important; opacity: 0.5 !important; }
+  .state-late10 { background-color: rgba(245, 158, 11, 0.4); border-color: var(--clr-late10); }
+  .state-late20 { background-color: rgba(249, 115, 22, 0.6); border-color: var(--clr-late20); }
+  .state-absent { background-color: rgba(239, 68, 68, 0.6); border-color: var(--clr-absent); }
+  .state-leave { background-color: rgba(59, 130, 246, 0.4); border-color: var(--clr-leave); }
+  
+  .strike-item { text-decoration: line-through !important; opacity: 0.5 !important; }
 
   .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 90px; background: rgba(10,10,10,0.98); border-top: 2px solid #333; display: flex; padding-bottom: env(safe-area-inset-bottom); z-index: 100; }
   .nav-item { flex: 1; text-align: center; font-size: 18px; color: #777; align-self: center; cursor: pointer; }
@@ -46,6 +48,9 @@
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; overflow-y: auto; }
   .modal-content { background: #111; border-radius: 40px; padding: 30px; border: 3px solid var(--gold-main); max-width: 600px; margin: 40px auto 100px; }
   .hist-entry { padding: 18px 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+  .status-tag { padding: 6px 12px; border-radius: 10px; font-size: 14px; font-weight: bold; }
+  .tag-unpaid { background: #ef4444; color: #fff; }
+  .tag-paid { background: #10b981; color: #fff; }
 </style>
 </head>
 <body>
@@ -54,18 +59,21 @@
     <div class="main-title">音演三莊<br>公演管理系統</div>
     <div id="student-login-area">
       <div class="login-card">
+          <div style="text-align:center; font-size:60px; margin-bottom:10px;">🔐</div>
           <div id="step-name">
+              <p style="text-align:center; color:var(--gold-main); font-weight:bold;">學生端帳目查詢</p>
               <input type="text" id="stu-name" placeholder="請輸入姓名">
-              <button class="btn-gold" onclick="searchStudent()">登入查詢</button>
+              <button class="btn-gold" onclick="searchStudent()">登入系統</button>
           </div>
           <div id="step-first-set" style="display:none">
-              <input type="password" id="first-pwd" placeholder="設定 4 位密碼" maxlength="4" inputmode="numeric">
+              <p style="text-align:center;">✨ 首次登入，請設定 4 位密碼</p>
+              <input type="password" id="first-pwd" placeholder="數字密碼" maxlength="4" inputmode="numeric">
               <button class="btn-gold" onclick="setPassword()">完成設定</button>
           </div>
           <div id="step-auth" style="display:none">
               <p id="auth-welcome" style="text-align:center; font-size:22px; color:var(--gold-light);"></p>
-              <input type="password" id="auth-pwd" placeholder="輸入密碼" maxlength="4" inputmode="numeric">
-              <button class="btn-gold" onclick="authStudent()">進入</button>
+              <input type="password" id="auth-pwd" placeholder="密碼" maxlength="4" inputmode="numeric">
+              <button class="btn-gold" onclick="authStudent()">進入查詢</button>
           </div>
       </div>
     </div>
@@ -75,23 +83,22 @@
 
   <div class="app-container admin-panel" id="view-admin">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="font-size:26px; color:var(--gold-main);">管理端 V5.2</h2>
+        <h2 style="font-size:26px; color:var(--gold-main);">管理後台</h2>
         <button onclick="location.reload()" style="background:none; border:2px solid #555; color:#888; border-radius:10px; padding:8px 12px;">登出</button>
     </div>
     <div id="pane-list"><div id="h-l"></div></div> 
     <div id="pane-att" style="display:none">
-        <button class="btn-gold" style="height:60px; font-size:18px; margin-bottom:20px; background:#444; color:#fff;" onclick="forceRestoreList(true)">🔄 若人名不齊請按此校正</button>
         <div id="att-grid"></div>
-        <button class="btn-gold" style="background:var(--clr-present); color:#fff; height:100px; margin-top:30px; font-size:30px;" onclick="submitAtt()">💾 確認儲存點名</button>
+        <button class="btn-gold" style="background:var(--clr-present); color:#fff; height:100px; margin-top:30px; font-size:30px;" onclick="submitAtt()">💾 點名存檔</button>
     </div>
     <div id="pane-rep" style="display:none">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h3>欠費報表</h3><div id="total-sum-badge" style="background:#ef4444; padding:10px 20px; border-radius:20px; font-weight:bold;">$0</div></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h3>欠費報表</h3><div id="total-sum-badge" style="background:#ef4444; padding:10px 20px; border-radius:20px;">$0</div></div>
         <div id="full-report-list" class="login-card" style="padding:20px; height: 50vh; overflow-y: auto;"></div>
     </div>
     <div id="pane-set" style="display:none">
         <div class="login-card">
             <button class="btn-gold" onclick="resetAllAccounting()" style="background:#ef4444; color:#fff; margin-bottom:40px;">🛑 帳目全歸零</button>
-            <button class="btn-gold" onclick="forceRestoreList(true)" style="background:#10b981; color:#fff;">🔧 名單修復按鈕</button>
+            <button class="btn-gold" onclick="forceRestoreList(true)" style="background:#10b981; color:#fff;">🔧 手動校正名單</button>
         </div>
     </div>
     <div class="nav-bar">
@@ -127,9 +134,8 @@
 
   _db.ref('students').on('value', s => {
       _all = s.val() || {};
-      if(Object.keys(_all).length < 55) forceRestoreList(true); // 強制確保 55 人
+      if(Object.keys(_all).length < 55) forceRestoreList(true); // 自動補齊防呆
       renderAdminList(); renderFullReport(); if(_user) renderUser();
-      if(_currentModalId) updateModalContent(_currentModalId);
   });
 
   _db.ref(`dailyAttendance/${getToday()}`).on('value', ds => {
@@ -137,18 +143,57 @@
       if(document.getElementById('pane-att').style.display === 'block') renderAttGrid();
   });
 
-  function renderAdminList() {
-    const l = document.getElementById('h-l'); if(!l) return;
-    const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99));
-    let html = "";
-    sorted.forEach(([id, s]) => {
-      if(s.no === 42) html += `<div style="text-align:center; color:var(--gold-main); font-weight:900; font-size:24px; margin:30px 0;">—— 演三莊名單 ——</div>`;
-      const debt = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0);
-      html += `<div class="list-item"><div style="display:flex; justify-content:space-between; align-items:center;"><div style="font-size:24px; font-weight:900;">${s.no}. ${s.name}</div><span onclick="toggleFund('${id}', ${s.fundPaid})" class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">${s.fundPaid?'已繳':'欠 1300'}</span></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;"><button onclick="openModal('${id}')" style="background:#d4af37; color:#000; font-weight:bold; border:none; padding:8px 18px; border-radius:15px;">核銷</button><b style="color:#ef4444; font-size:28px;">$${debt}</b></div></div>`;
-    });
-    l.innerHTML = html;
+  // 學生登入邏輯補強
+  function searchStudent() {
+      const nameInput = document.getElementById('stu-name').value.trim(); // 自動去除空格
+      if(!nameInput) return alert("請輸入姓名");
+      
+      const entry = Object.entries(_all).find(([id, s]) => s.name === nameInput);
+      if(!entry) return alert("查無此姓名，請檢查是否輸入正確 (包含姓與名)");
+      
+      _user = entry[0];
+      document.getElementById('step-name').style.display = 'none';
+      if(!_all[_user].password) {
+          document.getElementById('step-first-set').style.display = 'block';
+      } else {
+          document.getElementById('auth-welcome').innerText = `你好，${nameInput}`;
+          document.getElementById('step-auth').style.display = 'block';
+      }
   }
 
+  function setPassword() {
+      const p = document.getElementById('first-pwd').value;
+      if(p.length !== 4) return alert("請輸入 4 位數字");
+      _db.ref(`students/${_user}`).update({ password: p }).then(() => renderUser());
+  }
+
+  function authStudent() {
+      const p = document.getElementById('auth-pwd').value;
+      if(_all[_user].password === p) renderUser();
+      else alert("密碼錯誤，請重新輸入");
+  }
+
+  function renderUser() {
+    const s = _all[_user]; if(!s) return;
+    const fund = s.fundPaid ? 0 : 1300; const debt = (s.totalFine||0) + (s.propFine||0) + fund - (s.paidAmt||0);
+    const h = s.history ? Object.values(s.history).reverse() : [];
+    document.getElementById('student-login-area').style.display = 'none';
+    document.getElementById('student-info').innerHTML = `
+      <div class="login-card" style="text-align:center;">
+        <div style="font-size:26px; font-weight:bold; color:var(--gold-main);">${s.name} 同學</div>
+        <div style="font-size:80px; font-weight:900; margin:10px 0; color:#ef4444;">$${debt}</div>
+        <div class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">畢業基金：${s.fundPaid?'已繳':'未繳'}</div>
+        <div style="margin-top:20px; font-size:16px;">免死金牌餘額：${s.leaveQuota||0} 次</div>
+      </div>
+      <div style="margin-top:30px; font-weight:bold; color:var(--gold-light); font-size:24px; text-align:center;">📜 個人帳目流水帳</div>
+    ` + h.map(i => `<div class="hist-entry ${i.isPaid?'strike-item':''}">
+        <span><b style="color:var(--gold-main)">${i.time}</b><br><small>${i.type}</small></span>
+        <b style="font-size:18px;">$${i.amt||0}</b>
+      </div>`).join('');
+    document.getElementById('student-info').style.display = 'block';
+  }
+
+  // 管理端與點名邏輯 (維持 5.2 穩定架構)
   function renderAttGrid() {
       const grid = document.getElementById('att-grid'); if(!grid) return;
       let html = "";
@@ -156,7 +201,7 @@
           const no = idx + 1;
           const entry = Object.entries(_all).find(([k, v]) => v.name === name);
           const id = entry ? entry[0] : `temp-${idx}`;
-          if (!_attData[id]) _attData[id] = _daily[id] || { type: name==='蔡慧琳'?'special':'normal', status:'present', sum:0, name: name };
+          if (!_attData[id]) _attData[id] = _daily[id] || { type: name==='蔡慧琳'?'special':'normal', status:'present', sum:0 };
           const d = _attData[id];
           if (name === '蔡慧琳') {
               html += `<div class="att-box ${d.sum>0?'state-late10':''}"><span class="box-no">19</span><b style="font-size:22px;">${name}</b><div style="font-size:16px; font-weight:900;">$${d.sum||0}</div><div style="display:flex; gap:3px; justify-content:center;"><button style="font-size:10px; border:1px solid #d4af37; background:#000; color:#d4af37; padding:4px;" onclick="event.stopPropagation(); addHui('${id}',10)">早+10</button><button style="font-size:10px; border:1px solid #d4af37; background:#000; color:#d4af37; padding:4px;" onclick="event.stopPropagation(); addHui('${id}',20)">一+20</button></div></div>`;
@@ -171,31 +216,23 @@
 
   function cycleNormal(id) { const d = _attData[id]; const cycle = ['present', 'late10', 'late20', 'absent', 'leave']; let idx = cycle.indexOf(d.status || 'present'); d.status = cycle[(idx + 1) % 5]; d.sum = {'present':0,'late10':10,'late20':20,'absent':100,'leave':0}[d.status]; renderAttGrid(); }
   function addHui(id, val) { if(_attData[id]) { _attData[id].sum = (_attData[id].sum||0) + val; renderAttGrid(); } }
-
-  function submitAtt() {
-      const t = new Date().toLocaleDateString();
-      Object.entries(_attData).forEach(([id, d]) => {
-          if(id.startsWith('temp-')) return;
-          _db.ref(`dailyAttendance/${getToday()}/${id}`).set(d);
-          if(d.sum > 0 || d.status === 'leave') {
-              _db.ref(`students/${id}`).update({ totalFine: (_all[id].totalFine||0) + (d.sum||0) });
-              _db.ref(`students/${id}/history`).push({ type: (d.type==='normal'?d.status:'累計扣款'), amt: d.sum||0, time: t, isPaid: false });
-          }
-      });
-      alert("💾 點名已存檔！"); go('list');
-  }
-
-  function forceRestoreList(isAuto=false) { ALL_NAMES.forEach((n, idx) => { if(!Object.values(_all).find(s => s.name === n)) _db.ref('students').push({ no:idx+1, name:n, totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false }); }); if(!isAuto) alert("校正成功"); }
-  function toggleStrike(stuId, histId, currentStatus) { _db.ref(`students/${stuId}/history/${histId}`).update({ isPaid: !currentStatus }); }
-  function updateModalContent(id) { const s = _all[id]; if(!s) return; const d = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); document.getElementById('modal-header').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h3 style="margin:0; color:var(--gold-main); font-size:24px;">${s.no}. ${s.name}</h3><button onclick="closeModal()" style="background:none; border:none; color:#888; font-size:40px;">✕</button></div>`; document.getElementById('modal-body').innerHTML = `<div style="text-align:center;"><div style="font-size:60px; font-weight:900; color:#ef4444;">$${d}</div></div>`; document.getElementById('modal-btns').innerHTML = `<div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-top:20px;"><button class="btn-gold" style="background:#444; font-size:18px;" onclick="manualAddFineFromModal()">手動罰款</button><button class="btn-gold" style="background:#222; font-size:18px;" onclick="setPropFromModal()">道具費</button><button class="btn-gold" style="font-size:18px;" onclick="adminPaidFromModal()">已收現金</button></div>`; const h = s.history ? Object.entries(s.history).reverse() : []; document.getElementById('modal-history').innerHTML = `<b style="font-size:16px;">流水帳 (點擊核銷)：</b>` + (h.map(([hid, i]) => `<div class="hist-entry ${i.isPaid?'strike-item':''}" onclick="toggleStrike('${id}','${hid}',${i.isPaid})"><span><b style="color:var(--gold-main)">${i.time}</b><br><small>${i.type}</small></span><b style="font-size:18px;">$${i.amt||0}</b></div>`).join('') || '<p>無紀錄</p>'); }
+  function submitAtt() { const t = new Date().toLocaleDateString(); Object.entries(_attData).forEach(([id, d]) => { if(id.startsWith('temp-')) return; _db.ref(`dailyAttendance/${getToday()}/${id}`).set(d); if(d.sum > 0 || d.status === 'leave') { _db.ref(`students/${id}`).update({ totalFine: (_all[id].totalFine||0) + (d.sum||0) }); _db.ref(`students/${id}/history`).push({ type: (d.type==='normal'?d.status:'累計扣款'), amt: d.sum||0, time: t, isPaid: false }); } }); alert("💾 存檔成功！"); go('list'); }
   function go(p, el) { ['list', 'att', 'rep', 'set'].forEach(i => document.getElementById('pane-' + i).style.display = 'none'); document.getElementById('pane-' + p).style.display = 'block'; document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); if (el) el.classList.add('active'); if (p === 'att') renderAttGrid(); }
+  function forceRestoreList(isAuto=false) { ALL_NAMES.forEach((n, idx) => { if(!Object.values(_all).find(s => s.name === n)) _db.ref('students').push({ no:idx+1, name:n, totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false }); }); if(!isAuto) alert("名單校正完成"); }
   function showLock() { document.getElementById('lock-overlay').style.display='flex'; _pin=""; }
   function press(v) { if(v==='del') _pin=_pin.slice(0,-1); else if(_pin.length<4) _pin+=v; const ds=document.getElementById('pwd-dots').children; for(let i=0; i<4; i++) ds[i].style.background=i<_pin.length?'var(--gold-main)':'none'; if(_pin.length===4) { if(_pin===_mPin) { document.getElementById('lock-overlay').style.display='none'; document.getElementById('view-student').style.display='none'; document.getElementById('view-admin').style.display='block'; go('list'); } else { alert("錯誤"); _pin=""; } } }
-  function searchStudent() { const n = document.getElementById('stu-name').value.trim(); const f = Object.entries(_all).find(([id, s]) => s.name === n); if(!f) return alert("查無姓名"); _user = f[0]; document.getElementById('step-name').style.display='none'; if(!_all[_user].password) document.getElementById('step-first-set').style.display='block'; else document.getElementById('step-auth').style.display='block'; }
-  function setPassword() { const p = document.getElementById('first-pwd').value; if(p.length !== 4) return alert("4位數字"); _db.ref(`students/${_user}`).update({ password: p }); renderUser(); }
-  function authStudent() { if(_all[_user].password === document.getElementById('auth-pwd').value) renderUser(); else alert("密碼錯誤"); }
-  function closeModal() { document.getElementById('detail-modal').style.display='none'; _currentModalId=null; }
+  function renderAdminList() { const l = document.getElementById('h-l'); if(!l) return; const sorted = Object.entries(_all).sort((a,b) => (a[1].no || 99) - (b[1].no || 99)); let html = ""; sorted.forEach(([id, s]) => { if(s.no === 42) html += `<div style="text-align:center; color:var(--gold-main); font-weight:900; font-size:24px; margin:30px 0;">—— 演三莊名單 ——</div>`; const debt = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); html += `<div class="list-item"><div style="display:flex; justify-content:space-between; align-items:center;"><div style="font-size:24px; font-weight:900;">${s.no}. ${s.name}</div><span onclick="toggleFund('${id}', ${s.fundPaid})" class="status-tag ${s.fundPaid?'tag-paid':'tag-unpaid'}">${s.fundPaid?'已繳':'未繳'}</span></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;"><button onclick="openModal('${id}')" style="background:#d4af37; color:#000; font-weight:bold; border:none; padding:8px 18px; border-radius:15px;">核銷</button><b style="color:#ef4444; font-size:28px;">$${debt}</b></div></div>`; }); l.innerHTML = html; }
   function openModal(id) { _currentModalId = id; updateModalContent(id); document.getElementById('detail-modal').style.display = 'block'; }
+  function closeModal() { document.getElementById('detail-modal').style.display='none'; _currentModalId=null; }
+  function toggleStrike(stuId, histId, currentStatus) { _db.ref(`students/${stuId}/history/${histId}`).update({ isPaid: !currentStatus }); }
+  function updateModalContent(id) { const s = _all[id]; if(!s) return; const d = (s.totalFine||0) + (s.propFine||0) + (s.fundPaid?0:1300) - (s.paidAmt||0); document.getElementById('modal-header').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h3 style="margin:0; color:var(--gold-main); font-size:24px;">${s.no}. ${s.name}</h3><button onclick="closeModal()" style="background:none; border:none; color:#888; font-size:40px;">✕</button></div>`; document.getElementById('modal-body').innerHTML = `<div style="text-align:center;"><div style="font-size:60px; font-weight:900; color:#ef4444;">$${d}</div></div><p style="text-align:center; color:#888;">密碼：${s.password||'未設定'}</p>`; document.getElementById('modal-btns').innerHTML = `<div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-top:20px;"><button class="btn-gold" style="background:#444; font-size:18px;" onclick="manualAddFineFromModal()">手動罰款</button><button class="btn-gold" style="background:#222; font-size:18px;" onclick="setPropFromModal()">道具費</button><button class="btn-gold" style="font-size:18px;" onclick="adminPaidFromModal()">已收現金</button></div>`; const h = s.history ? Object.entries(s.history).reverse() : []; document.getElementById('modal-history').innerHTML = `<b style="font-size:16px;">流水帳 (點擊核銷)：</b>` + (h.map(([hid, i]) => `<div class="hist-entry ${i.isPaid?'strike-item':''}" onclick="toggleStrike('${id}','${hid}',${i.isPaid})"><span><b style="color:var(--gold-main)">${i.time}</b><br><small>${i.type}</small></span><b style="font-size:18px;">$${i.amt||0}</b></div>`).join('') || '<p>無紀錄</p>'); }
+  function renderFullReport() { let total = 0; let html = ""; Object.entries(_all).sort((a,b)=>a[1].no-b[1].no).forEach(([id, s]) => { const fund = s.fundPaid ? 0 : 1300; const d = (s.totalFine||0)+(s.propFine||0)+fund-(s.paidAmt||0); total += d; html += `<div style="display:flex; justify-content:space-between; padding:15px 0; border-bottom:1px solid #222;"><span>${s.no}. ${s.name}</span><span style="color:#ef4444; font-weight:bold;">$${d}</span></div>`; }); document.getElementById('total-sum-badge').innerText = '$' + total; document.getElementById('full-report-list').innerHTML = html; }
+  function resetAllAccounting() { if(confirm("重設？")) { Object.keys(_all).forEach(id => _db.ref(`students/${id}`).update({ totalFine:0, propFine:0, paidAmt:0, leaveQuota:2, fundPaid:false, propNote:"", history:null, password:null })); _db.ref('dailyAttendance').remove(); } }
+  function adminDeduct(id, target) { const s = _all[id]; if(!s) return; const q = s.leaveQuota || 2; if (q <= target) { if(confirm("取消？")) _db.ref(`students/${id}`).update({ leaveQuota: q + 1 }); } else { if(confirm("消耗免死金牌？")) { _db.ref(`students/${id}`).update({ leaveQuota: q - 1 }); _db.ref(`students/${id}/history`).push({ type: "消耗金牌(抵扣)", amt: 0, time: new Date().toLocaleDateString(), isPaid: true }); } } }
+  function toggleFund(id, cur) { _db.ref(`students/${id}`).update({ fundPaid: !cur }); }
+  function manualAddFineFromModal() { const amt = prompt("金額："); const r = prompt("原因："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ totalFine:(_all[_currentModalId].totalFine||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type: r, amt: parseInt(amt), time: new Date().toLocaleDateString(), isPaid: false }); } }
+  function adminPaidFromModal() { const amt = prompt("收錢金額："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ paidAmt:(_all[_currentModalId].paidAmt||0)+parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type: "現金收訖", amt: -parseInt(amt), time: new Date().toLocaleDateString(), isPaid: true }); } }
+  function setPropFromModal() { const amt = prompt("金額："); if(amt) { _db.ref(`students/${_currentModalId}`).update({ propFine:parseInt(amt) }); _db.ref(`students/${_currentModalId}/history`).push({ type: "道具費", amt: parseInt(amt), time: new Date().toLocaleDateString(), isPaid: false }); } }
 </script>
 </body>
 </html>
